@@ -27,7 +27,7 @@ export default function Gauge({ value, target, color, size = 72 }: GaugeProps) {
           r={radius}
           fill="none"
           stroke="currentColor"
-          className="text-neutral-800"
+          className="text-sand"
           strokeWidth={6}
         />
         <circle
@@ -43,7 +43,7 @@ export default function Gauge({ value, target, color, size = 72 }: GaugeProps) {
           style={{ transition: "stroke-dashoffset 0.3s ease" }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-sm font-medium text-neutral-100">
+      <div className="absolute inset-0 flex items-center justify-center text-sm font-medium text-ink">
         {value}/{target}
       </div>
     </div>

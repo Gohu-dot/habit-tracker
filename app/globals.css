@@ -3,4 +3,13 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Palette "clean girl" : beige/crème + rose poudré */
+  --color-cream: #f5efe6; /* fond de page */
+  --color-ivory: #fffbf7; /* fond des cartes */
+  --color-sand: #e8ddd0; /* bordures, piste de la jauge */
+  --color-blush: #e8b4b8; /* rose poudré doux */
+  --color-blush-deep: #b8656e; /* rose plus soutenu (texte, boutons, succès) */
+  --color-ink: #4a3b35; /* texte principal */
+  --color-ink-soft: #8b7d74; /* texte secondaire */
 }

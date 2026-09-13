@@ -101,7 +101,7 @@ export default function Dashboard({ userId }: DashboardProps) {
   }
 
   if (loading) {
-    return <p className="p-8 text-neutral-400">Chargement...</p>;
+    return <p className="p-8 text-ink-soft">Chargement...</p>;
   }
 
   const doneKeys = new Set(logs.map((l) => l.habit_key as HabitKey));
@@ -114,36 +114,36 @@ export default function Dashboard({ userId }: DashboardProps) {
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-neutral-100">Mes habitudes</h1>
-        <button onClick={handleSignOut} className="text-sm text-neutral-400 hover:text-neutral-200">
+        <h1 className="text-xl font-semibold text-ink">Mes habitudes</h1>
+        <button onClick={handleSignOut} className="text-sm text-ink-soft hover:text-ink">
           Se déconnecter
         </button>
       </div>
 
       {errorMessage && (
-        <p className="rounded-lg border border-red-900 bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {errorMessage}
         </p>
       )}
 
-      <div className="flex items-center gap-4 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+      <div className="flex items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm">
         <Gauge
           value={totalPoints}
           target={MAX_DAILY_POINTS}
-          color={success ? "#22c55e" : "#f59e0b"}
+          color={success ? "#B8656E" : "#E8B4B8"}
           size={96}
         />
         <div>
-          <p className="text-lg font-medium text-neutral-100">
+          <p className="text-lg font-medium text-ink">
             {totalPoints} point{totalPoints > 1 ? "s" : ""} aujourd&rsquo;hui
           </p>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-ink-soft">
             Objectif : {DAILY_TARGET_POINTS} points minimum par jour
           </p>
           {success ? (
-            <p className="mt-1 text-sm font-medium text-emerald-400">✓ Objectif atteint</p>
+            <p className="mt-1 text-sm font-medium text-blush-deep">✓ Objectif atteint</p>
           ) : (
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-ink-soft">
               Encore {DAILY_TARGET_POINTS - totalPoints} point
               {DAILY_TARGET_POINTS - totalPoints > 1 ? "s" : ""} pour atteindre l&rsquo;objectif
             </p>
