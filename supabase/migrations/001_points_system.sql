@@ -1,11 +1,15 @@
--- Schéma pour l'app "habit-tracker"
--- À exécuter dans Supabase : Dashboard > SQL Editor > New query > coller > Run
+-- Migration : passage à un catalogue d'habitudes fixe + système de points.
+-- À exécuter une seule fois dans Supabase (SQL Editor) sur un projet qui a
+-- déjà l'ancien schéma (tables "habits" + "habit_logs" avec target_per_week).
 --
--- Le catalogue des habitudes (nom, points) est fixe et vit dans le code
--- (lib/habits.ts), pas en base : seule la table ci-dessous enregistre,
--- pour un utilisateur et une date donnés, quelles habitudes ont été cochées.
+-- Attention : supprime l'historique existant (habits + habit_logs). Sans
+-- conséquence si l'app vient d'être créée et n'a pas encore de vraies
+-- données à conserver.
 
-create table if not exists habit_logs (
+drop table if exists habit_logs;
+drop table if exists habits;
+
+create table habit_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   habit_key text not null,
@@ -16,7 +20,6 @@ create table if not exists habit_logs (
 
 alter table habit_logs enable row level security;
 
--- Chaque utilisateur ne voit et ne modifie que ses propres données.
 create policy "habit_logs: owner read" on habit_logs
   for select using (auth.uid() = user_id);
 create policy "habit_logs: owner insert" on habit_logs

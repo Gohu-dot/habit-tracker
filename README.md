@@ -1,8 +1,9 @@
 # Habit Tracker
 
 Site privé (usage personnel uniquement) pour suivre mes habitudes de vie :
-chaque habitude a une jauge circulaire qui se remplit selon le nombre de
-fois où elle a été cochée dans la semaine en cours.
+6 habitudes fixes valent chacune un certain nombre de points, et une jauge
+quotidienne indique le total de points gagnés dans la journée, avec un
+objectif minimum de 5 points/jour.
 
 Stack : Next.js (App Router) + Tailwind CSS pour le front, Supabase
 (Postgres + Auth) pour la base de données et l'authentification,
@@ -13,9 +14,10 @@ déploiement sur Vercel.
 1. Va sur [supabase.com](https://supabase.com), crée un compte puis un
    nouveau projet (région Europe conseillée).
 2. Dans **SQL Editor**, colle le contenu de `supabase/schema.sql` et
-   exécute-le. Cela crée les tables `habits` et `habit_logs`, avec des
-   règles de sécurité (Row Level Security) qui garantissent que seul le
-   propriétaire des données peut les lire ou les modifier.
+   exécute-le. Cela crée la table `habit_logs`, avec des règles de sécurité
+   (Row Level Security) qui garantissent que seul le propriétaire des
+   données peut les lire ou les modifier. Le catalogue des habitudes (nom,
+   points) n'est pas en base : il vit dans le code, voir `lib/habits.ts`.
 3. Dans **Authentication > Users**, crée manuellement ton unique compte
    (e-mail + mot de passe). Il n'y a pas de page d'inscription publique :
    c'est volontaire, ce site est fait pour un seul utilisateur.
@@ -54,12 +56,29 @@ le compte créé dans Supabase.
 
 ## Fonctionnement
 
-- Chaque habitude a un nom, une couleur et un objectif hebdomadaire
-  (1 à 7 fois par semaine).
-- Une case à cocher "Aujourd'hui" enregistre/retire une ligne dans
-  `habit_logs` pour la date du jour.
-- La jauge circulaire affiche le nombre de jours cochés cette semaine
-  (lundi à dimanche) par rapport à l'objectif.
+- Le catalogue des 6 habitudes (nom + points) est fixe et défini dans
+  `lib/habits.ts` — il n'y a pas d'ajout/suppression d'habitude depuis
+  l'interface, elles sont toujours toutes affichées :
+  - Activité physique (muscu, pilates, fitness maison, yoga, 7000 pas) — 3 pts
+  - Alimentation saine et protéinée — 3 pts
+  - Boire 1,5L d'eau — 2 pts
+  - Activité intellectuelle (documentaire, podcast) — 2 pts
+  - Lire 20 pages — 1 pt
+  - Porter les gouttières — 1 pt
+- Cocher une case enregistre/retire une ligne dans `habit_logs` pour la
+  date du jour.
+- La jauge du haut affiche le total de points gagnés aujourd'hui, et passe
+  au vert avec "✓ Objectif atteint" dès que le minimum quotidien (5 points,
+  `DAILY_TARGET_POINTS` dans `lib/habits.ts`) est atteint.
 - Toutes les requêtes passent par les policies RLS de Supabase : même en
   cas de fuite de la clé publique (`anon key`, faite pour être exposée côté
   client), personne ne peut lire ou écrire les données d'un autre compte.
+
+## Modifier le catalogue d'habitudes ou l'objectif
+
+Tout se passe dans `lib/habits.ts` : ajoute/modifie une entrée dans le
+tableau `HABITS` (clé, nom, points) ou change `DAILY_TARGET_POINTS`. Aucune
+migration de base de données n'est nécessaire pour ça, seul le nom affiché
+et les points changent — l'historique déjà enregistré (`habit_key`) reste
+valable tant que la clé (`key`) d'une habitude existante n'est pas modifiée
+ou supprimée.

@@ -2,38 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { startOfWeek, todayISO, toISODate } from "@/lib/date";
-import type { Habit, HabitLog } from "@/lib/types";
+import { todayISO } from "@/lib/date";
+import { HABITS, DAILY_TARGET_POINTS, MAX_DAILY_POINTS, type HabitKey } from "@/lib/habits";
+import type { HabitLog } from "@/lib/types";
+import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
-import AddHabitForm from "./AddHabitForm";
 
 type DashboardProps = {
   userId: string;
 };
 
 export default function Dashboard({ userId }: DashboardProps) {
-  const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const weekStartISO = toISODate(startOfWeek(new Date()));
   const today = todayISO();
 
   useEffect(() => {
     let ignore = false;
 
     async function loadData() {
-      const [{ data: habitsData }, { data: logsData }] = await Promise.all([
-        supabase
-          .from("habits")
-          .select("*")
-          .eq("archived", false)
-          .order("created_at", { ascending: true }),
-        supabase.from("habit_logs").select("*").gte("log_date", weekStartISO),
-      ]);
+      const { data } = await supabase
+        .from("habit_logs")
+        .select("*")
+        .eq("log_date", today);
       if (ignore) return;
-      setHabits(habitsData ?? []);
-      setLogs(logsData ?? []);
+      setLogs(data ?? []);
       setLoading(false);
     }
 
@@ -41,32 +35,17 @@ export default function Dashboard({ userId }: DashboardProps) {
     return () => {
       ignore = true;
     };
-  }, [weekStartISO]);
+  }, [today]);
 
-  async function handleAdd(name: string, color: string, targetPerWeek: number) {
-    const { data, error } = await supabase
-      .from("habits")
-      .insert({ user_id: userId, name, color, target_per_week: targetPerWeek })
-      .select()
-      .single();
-    if (!error && data) setHabits((prev) => [...prev, data]);
-  }
-
-  async function handleDelete(habit: Habit) {
-    if (!confirm(`Supprimer "${habit.name}" et tout son historique ?`)) return;
-    const { error } = await supabase.from("habits").delete().eq("id", habit.id);
-    if (!error) setHabits((prev) => prev.filter((h) => h.id !== habit.id));
-  }
-
-  async function handleToggleToday(habit: Habit) {
-    const existing = logs.find((l) => l.habit_id === habit.id && l.log_date === today);
+  async function handleToggle(habit: (typeof HABITS)[number]) {
+    const existing = logs.find((l) => l.habit_key === habit.key && l.log_date === today);
     if (existing) {
       const { error } = await supabase.from("habit_logs").delete().eq("id", existing.id);
       if (!error) setLogs((prev) => prev.filter((l) => l.id !== existing.id));
     } else {
       const { data, error } = await supabase
         .from("habit_logs")
-        .insert({ habit_id: habit.id, user_id: userId, log_date: today })
+        .insert({ user_id: userId, habit_key: habit.key, log_date: today })
         .select()
         .single();
       if (!error && data) setLogs((prev) => [...prev, data]);
@@ -81,6 +60,13 @@ export default function Dashboard({ userId }: DashboardProps) {
     return <p className="p-8 text-neutral-400">Chargement...</p>;
   }
 
+  const doneKeys = new Set(logs.map((l) => l.habit_key as HabitKey));
+  const totalPoints = HABITS.filter((h) => doneKeys.has(h.key)).reduce(
+    (sum, h) => sum + h.points,
+    0
+  );
+  const success = totalPoints >= DAILY_TARGET_POINTS;
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div className="flex items-center justify-between">
@@ -90,28 +76,41 @@ export default function Dashboard({ userId }: DashboardProps) {
         </button>
       </div>
 
-      <AddHabitForm onAdd={handleAdd} />
-
-      {habits.length === 0 ? (
-        <p className="text-neutral-400">Ajoute ta première habitude ci-dessus.</p>
-      ) : (
-        <div className="space-y-3">
-          {habits.map((habit) => {
-            const weekCount = logs.filter((l) => l.habit_id === habit.id).length;
-            const doneToday = logs.some((l) => l.habit_id === habit.id && l.log_date === today);
-            return (
-              <HabitCard
-                key={habit.id}
-                habit={habit}
-                weekCount={weekCount}
-                doneToday={doneToday}
-                onToggleToday={handleToggleToday}
-                onDelete={handleDelete}
-              />
-            );
-          })}
+      <div className="flex items-center gap-4 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+        <Gauge
+          value={totalPoints}
+          target={MAX_DAILY_POINTS}
+          color={success ? "#22c55e" : "#f59e0b"}
+          size={96}
+        />
+        <div>
+          <p className="text-lg font-medium text-neutral-100">
+            {totalPoints} point{totalPoints > 1 ? "s" : ""} aujourd&rsquo;hui
+          </p>
+          <p className="text-sm text-neutral-400">
+            Objectif : {DAILY_TARGET_POINTS} points minimum par jour
+          </p>
+          {success ? (
+            <p className="mt-1 text-sm font-medium text-emerald-400">✓ Objectif atteint</p>
+          ) : (
+            <p className="mt-1 text-sm text-neutral-400">
+              Encore {DAILY_TARGET_POINTS - totalPoints} point
+              {DAILY_TARGET_POINTS - totalPoints > 1 ? "s" : ""} pour atteindre l&rsquo;objectif
+            </p>
+          )}
         </div>
-      )}
+      </div>
+
+      <div className="space-y-3">
+        {HABITS.map((habit) => (
+          <HabitCard
+            key={habit.key}
+            habit={habit}
+            done={doneKeys.has(habit.key)}
+            onToggle={handleToggle}
+          />
+        ))}
+      </div>
     </div>
   );
 }
