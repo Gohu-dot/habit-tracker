@@ -17,7 +17,32 @@ export default function Dashboard({ userId }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const today = todayISO();
+  const [today, setToday] = useState(todayISO());
+
+  // Sans ça, un onglet resté ouvert à travers minuit continuerait d'afficher
+  // les coches de la veille tant qu'on ne rafraîchit pas la page.
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    function scheduleNextRollover() {
+      const now = new Date();
+      const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        0,
+        0,
+        5 // petite marge de sécurité après minuit
+      );
+      timeoutId = setTimeout(() => {
+        setToday(todayISO());
+        scheduleNextRollover();
+      }, nextMidnight.getTime() - now.getTime());
+    }
+
+    scheduleNextRollover();
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   useEffect(() => {
     let ignore = false;
