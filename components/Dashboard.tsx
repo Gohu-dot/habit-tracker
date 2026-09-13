@@ -15,6 +15,7 @@ type DashboardProps = {
 export default function Dashboard({ userId }: DashboardProps) {
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const today = todayISO();
 
@@ -22,12 +23,19 @@ export default function Dashboard({ userId }: DashboardProps) {
     let ignore = false;
 
     async function loadData() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("habit_logs")
         .select("*")
         .eq("log_date", today);
       if (ignore) return;
-      setLogs(data ?? []);
+      if (error) {
+        console.error(error);
+        setErrorMessage(
+          "Impossible de charger les habitudes du jour : " + error.message
+        );
+      } else {
+        setLogs(data ?? []);
+      }
       setLoading(false);
     }
 
@@ -38,17 +46,28 @@ export default function Dashboard({ userId }: DashboardProps) {
   }, [today]);
 
   async function handleToggle(habit: (typeof HABITS)[number]) {
+    setErrorMessage(null);
     const existing = logs.find((l) => l.habit_key === habit.key && l.log_date === today);
     if (existing) {
       const { error } = await supabase.from("habit_logs").delete().eq("id", existing.id);
-      if (!error) setLogs((prev) => prev.filter((l) => l.id !== existing.id));
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible de décocher cette habitude : " + error.message);
+      } else {
+        setLogs((prev) => prev.filter((l) => l.id !== existing.id));
+      }
     } else {
       const { data, error } = await supabase
         .from("habit_logs")
         .insert({ user_id: userId, habit_key: habit.key, log_date: today })
         .select()
         .single();
-      if (!error && data) setLogs((prev) => [...prev, data]);
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible d'enregistrer cette habitude : " + error.message);
+      } else if (data) {
+        setLogs((prev) => [...prev, data]);
+      }
     }
   }
 
@@ -75,6 +94,12 @@ export default function Dashboard({ userId }: DashboardProps) {
           Se déconnecter
         </button>
       </div>
+
+      {errorMessage && (
+        <p className="rounded-lg border border-red-900 bg-red-950 px-3 py-2 text-sm text-red-300">
+          {errorMessage}
+        </p>
+      )}
 
       <div className="flex items-center gap-4 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
         <Gauge
