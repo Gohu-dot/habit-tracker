@@ -73,7 +73,7 @@ le compte créé dans Supabase.
   (5 points, `DAILY_TARGET_POINTS` dans `lib/habits.ts`) est atteint.
 - Un bloc historique affiche la série de jours consécutifs réussis
   ("🔥 N jours d'affilée"), un bilan de la semaine et du mois en cours, et
-  un mini calendrier des 14 derniers jours (voir `lib/history.ts` pour les
+  un calendrier complet du mois en cours (voir `lib/history.ts` pour les
   calculs et `components/HistorySection.tsx` pour l'affichage). Rien n'est
   jamais supprimé en base : chaque jour reste dans `habit_logs` avec sa
   propre date, l'appli ne fait que recharger les 90 derniers jours à

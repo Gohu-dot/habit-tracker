@@ -23,7 +23,8 @@ le compte est créé manuellement dans Supabase.
   addition de jours)
 - `lib/history.ts` : calculs à partir des logs bruts — total de points par
   jour, série de jours consécutifs réussis (streak), bilan sur une plage de
-  dates (semaine/mois), liste des N derniers jours
+  dates (semaine/mois), toutes les dates d'un mois donné (`monthDays`) pour
+  le calendrier
 - `supabase/schema.sql` : schéma (table `habit_logs`) + policies RLS
 - `supabase/migrations/` : scripts de migration ponctuels à exécuter à la
   main dans le SQL Editor Supabase (pas de migration automatique)
@@ -34,7 +35,8 @@ le compte est créé manuellement dans Supabase.
   l'animation de succès (`animate-celebrate` dans `globals.css`) au moment
   précis où l'objectif est atteint
 - `components/HistorySection.tsx` : série en cours, bilan semaine/mois,
-  mini calendrier des 14 derniers jours
+  calendrier complet du mois en cours (grille 7 colonnes alignée sur le
+  jour de la semaine, jours futurs affichés en grisé/neutre)
 - `components/HabitCard.tsx`, `Gauge.tsx`, `LoginForm.tsx`
 - `app/manifest.ts`, `app/icon.png`, `app/apple-icon.png` : PWA (site
   installable sur écran d'accueil mobile), pas de service worker/mode

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { addDays, startOfMonth, startOfWeek, todayISO, toISODate } from "@/lib/date";
 import { HABITS, DAILY_TARGET_POINTS, MAX_DAILY_POINTS, type HabitKey } from "@/lib/habits";
-import { computeDailyTotals, computeStreak, countSuccessDaysInRange, lastNDays } from "@/lib/history";
+import { computeDailyTotals, computeStreak, countSuccessDaysInRange, monthDays } from "@/lib/history";
 import type { HabitLog } from "@/lib/types";
 import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
@@ -100,7 +100,7 @@ export default function Dashboard({ userId }: DashboardProps) {
     () => countSuccessDaysInRange(dailyTotals, startOfMonth(todayAsDate), todayAsDate),
     [dailyTotals, todayAsDate]
   );
-  const last14Days = useMemo(() => lastNDays(14, todayAsDate), [todayAsDate]);
+  const currentMonthDays = useMemo(() => monthDays(todayAsDate), [todayAsDate]);
 
   // Petite animation quand on vient d'atteindre l'objectif du jour (pas au
   // premier chargement si l'objectif était déjà atteint auparavant).
@@ -150,7 +150,7 @@ export default function Dashboard({ userId }: DashboardProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">Mes habitudes</h1>
         <button onClick={handleSignOut} className="text-sm text-ink-soft hover:text-ink">
@@ -197,13 +197,14 @@ export default function Dashboard({ userId }: DashboardProps) {
 
       <HistorySection
         dailyTotals={dailyTotals}
-        days={last14Days}
+        monthDays={currentMonthDays}
+        today={today}
         streak={streak}
         weekStats={weekStats}
         monthStats={monthStats}
       />
 
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {HABITS.map((habit) => (
           <HabitCard
             key={habit.key}

@@ -1,6 +1,6 @@
 import { HABITS, DAILY_TARGET_POINTS, type HabitKey } from "./habits";
 import type { HabitLog } from "./types";
-import { addDays, toISODate } from "./date";
+import { addDays, startOfMonth, toISODate } from "./date";
 
 const POINTS_BY_KEY = new Map(HABITS.map((h) => [h.key, h.points]));
 
@@ -58,13 +58,20 @@ export function countSuccessDaysInRange(
   return { successDays, totalDays };
 }
 
-// Les n derniers jours (dates ISO), du plus ancien au plus récent, en incluant endDate.
-export function lastNDays(n: number, endDate: Date): string[] {
+// Toutes les dates ISO du mois contenant `date`, du 1er au dernier jour.
+export function monthDays(date: Date): string[] {
+  const start = startOfMonth(date);
   const days: string[] = [];
-  let cursor = new Date(endDate);
-  for (let i = 0; i < n; i++) {
-    days.unshift(toISODate(cursor));
-    cursor = addDays(cursor, -1);
+  let cursor = new Date(start);
+  while (cursor.getMonth() === start.getMonth()) {
+    days.push(toISODate(cursor));
+    cursor = addDays(cursor, 1);
   }
   return days;
+}
+
+// Index du jour dans une semaine qui commence le lundi (0 = lundi ... 6 = dimanche).
+export function mondayIndex(date: Date): number {
+  const day = date.getDay(); // 0 = dimanche
+  return day === 0 ? 6 : day - 1;
 }
