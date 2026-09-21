@@ -68,8 +68,21 @@ le compte créé dans Supabase.
 - Cocher une case enregistre/retire une ligne dans `habit_logs` pour la
   date du jour.
 - La jauge du haut affiche le total de points gagnés aujourd'hui, et passe
-  au vert avec "✓ Objectif atteint" dès que le minimum quotidien (5 points,
-  `DAILY_TARGET_POINTS` dans `lib/habits.ts`) est atteint.
+  au rose soutenu avec "✓ Objectif atteint" (+ une petite animation au
+  moment précis où l'objectif est franchi) dès que le minimum quotidien
+  (5 points, `DAILY_TARGET_POINTS` dans `lib/habits.ts`) est atteint.
+- Un bloc historique affiche la série de jours consécutifs réussis
+  ("🔥 N jours d'affilée"), un bilan de la semaine et du mois en cours, et
+  un mini calendrier des 14 derniers jours (voir `lib/history.ts` pour les
+  calculs et `components/HistorySection.tsx` pour l'affichage). Rien n'est
+  jamais supprimé en base : chaque jour reste dans `habit_logs` avec sa
+  propre date, l'appli ne fait que recharger les 90 derniers jours à
+  chaque visite pour calculer ces statistiques.
+- Le site est installable comme une application (PWA) : "Ajouter à l'écran
+  d'accueil" sur téléphone ouvre le site en plein écran, sans barre
+  d'adresse, avec sa propre icône (voir `app/manifest.ts`, `app/icon.png`,
+  `app/apple-icon.png`). Pas de mode hors-ligne : l'appli a de toute façon
+  besoin du réseau pour parler à Supabase.
 - Toutes les requêtes passent par les policies RLS de Supabase : même en
   cas de fuite de la clé publique (`anon key`, faite pour être exposée côté
   client), personne ne peut lire ou écrire les données d'un autre compte.

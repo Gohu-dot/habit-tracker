@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { todayISO } from "@/lib/date";
+import { addDays, startOfMonth, startOfWeek, todayISO, toISODate } from "@/lib/date";
 import { HABITS, DAILY_TARGET_POINTS, MAX_DAILY_POINTS, type HabitKey } from "@/lib/habits";
+import { computeDailyTotals, computeStreak, countSuccessDaysInRange, lastNDays } from "@/lib/history";
 import type { HabitLog } from "@/lib/types";
 import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
+import HistorySection from "./HistorySection";
 
 type DashboardProps = {
   userId: string;
 };
 
+const HISTORY_DAYS = 90;
+
 export default function Dashboard({ userId }: DashboardProps) {
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
 
   const [today, setToday] = useState(todayISO());
 
@@ -48,15 +53,16 @@ export default function Dashboard({ userId }: DashboardProps) {
     let ignore = false;
 
     async function loadData() {
+      const sinceDate = toISODate(addDays(new Date(), -HISTORY_DAYS));
       const { data, error } = await supabase
         .from("habit_logs")
         .select("*")
-        .eq("log_date", today);
+        .gte("log_date", sinceDate);
       if (ignore) return;
       if (error) {
         console.error(error);
         setErrorMessage(
-          "Impossible de charger les habitudes du jour : " + error.message
+          "Impossible de charger les habitudes : " + error.message
         );
       } else {
         setLogs(data ?? []);
@@ -69,6 +75,45 @@ export default function Dashboard({ userId }: DashboardProps) {
       ignore = true;
     };
   }, [today]);
+
+  const doneKeys = useMemo(
+    () =>
+      new Set(
+        logs.filter((l) => l.log_date === today).map((l) => l.habit_key as HabitKey)
+      ),
+    [logs, today]
+  );
+  const totalPoints = HABITS.filter((h) => doneKeys.has(h.key)).reduce(
+    (sum, h) => sum + h.points,
+    0
+  );
+  const success = totalPoints >= DAILY_TARGET_POINTS;
+
+  const todayAsDate = useMemo(() => new Date(`${today}T00:00:00`), [today]);
+  const dailyTotals = useMemo(() => computeDailyTotals(logs), [logs]);
+  const streak = useMemo(() => computeStreak(dailyTotals, today), [dailyTotals, today]);
+  const weekStats = useMemo(
+    () => countSuccessDaysInRange(dailyTotals, startOfWeek(todayAsDate), todayAsDate),
+    [dailyTotals, todayAsDate]
+  );
+  const monthStats = useMemo(
+    () => countSuccessDaysInRange(dailyTotals, startOfMonth(todayAsDate), todayAsDate),
+    [dailyTotals, todayAsDate]
+  );
+  const last14Days = useMemo(() => lastNDays(14, todayAsDate), [todayAsDate]);
+
+  // Petite animation quand on vient d'atteindre l'objectif du jour (pas au
+  // premier chargement si l'objectif était déjà atteint auparavant).
+  const prevSuccessRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (prevSuccessRef.current === false && success) {
+      setCelebrate(true);
+      const timer = setTimeout(() => setCelebrate(false), 1600);
+      prevSuccessRef.current = success;
+      return () => clearTimeout(timer);
+    }
+    prevSuccessRef.current = success;
+  }, [success]);
 
   async function handleToggle(habit: (typeof HABITS)[number]) {
     setErrorMessage(null);
@@ -104,13 +149,6 @@ export default function Dashboard({ userId }: DashboardProps) {
     return <p className="p-8 text-ink-soft">Chargement...</p>;
   }
 
-  const doneKeys = new Set(logs.map((l) => l.habit_key as HabitKey));
-  const totalPoints = HABITS.filter((h) => doneKeys.has(h.key)).reduce(
-    (sum, h) => sum + h.points,
-    0
-  );
-  const success = totalPoints >= DAILY_TARGET_POINTS;
-
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-10">
       <div className="flex items-center justify-between">
@@ -126,7 +164,11 @@ export default function Dashboard({ userId }: DashboardProps) {
         </p>
       )}
 
-      <div className="flex items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm">
+      <div
+        className={`flex items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm ${
+          celebrate ? "animate-celebrate" : ""
+        }`}
+      >
         <Gauge
           value={totalPoints}
           target={MAX_DAILY_POINTS}
@@ -141,7 +183,9 @@ export default function Dashboard({ userId }: DashboardProps) {
             Objectif : {DAILY_TARGET_POINTS} points minimum par jour
           </p>
           {success ? (
-            <p className="mt-1 text-sm font-medium text-blush-deep">✓ Objectif atteint</p>
+            <p className="mt-1 text-sm font-medium text-blush-deep">
+              {celebrate ? "✨ Objectif atteint !" : "✓ Objectif atteint"}
+            </p>
           ) : (
             <p className="mt-1 text-sm text-ink-soft">
               Encore {DAILY_TARGET_POINTS - totalPoints} point
@@ -150,6 +194,14 @@ export default function Dashboard({ userId }: DashboardProps) {
           )}
         </div>
       </div>
+
+      <HistorySection
+        dailyTotals={dailyTotals}
+        days={last14Days}
+        streak={streak}
+        weekStats={weekStats}
+        monthStats={monthStats}
+      />
 
       <div className="space-y-3">
         {HABITS.map((habit) => (

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,6 +16,15 @@ export const metadata: Metadata = {
   title: "Habit Tracker",
   description: "Suivi personnel d'habitudes de vie",
   robots: { index: false, follow: false },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Habitudes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f5efe6",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

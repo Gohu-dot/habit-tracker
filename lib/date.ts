@@ -19,3 +19,15 @@ export function startOfWeek(date: Date): Date {
   result.setHours(0, 0, 0, 0);
   return result;
 }
+
+export function startOfMonth(date: Date): Date {
+  const result = new Date(date.getFullYear(), date.getMonth(), 1);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+export function addDays(date: Date, amount: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + amount);
+  return result;
+}
