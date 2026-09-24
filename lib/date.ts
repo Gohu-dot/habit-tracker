@@ -6,8 +6,17 @@ export function toISODate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function todayISO(): string {
-  return toISODate(new Date());
+// Heure à laquelle la journée d'habitudes "bascule" sur le jour suivant.
+// Avant cette heure, on est encore considéré comme étant la veille (on peut
+// par exemple cocher tard le soir ou tôt le matin les habitudes de la veille).
+export const DAY_RESET_HOUR = 7;
+export const DAY_RESET_MINUTE = 30;
+
+// Date "métier" du jour en cours, décalée de l'heure de réinitialisation.
+export function todayISO(date: Date = new Date()): string {
+  const resetOffsetMs = (DAY_RESET_HOUR * 60 + DAY_RESET_MINUTE) * 60 * 1000;
+  const shifted = new Date(date.getTime() - resetOffsetMs);
+  return toISODate(shifted);
 }
 
 // Lundi de la semaine en cours (semaine du lundi au dimanche).

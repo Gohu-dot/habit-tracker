@@ -19,8 +19,10 @@ le compte est créé manuellement dans Supabase.
   rien de tout ça n'est en base ni modifiable depuis l'interface
 - `lib/supabaseClient.ts` : client Supabase (variables d'env `NEXT_PUBLIC_*`)
 - `lib/types.ts` : type `HabitLog` (une ligne = une habitude cochée un jour)
-- `lib/date.ts` : helpers de date (jour courant, début de semaine/mois,
-  addition de jours)
+- `lib/date.ts` : helpers de date — `todayISO()` renvoie la date "métier" du
+  jour, décalée par `DAY_RESET_HOUR`/`DAY_RESET_MINUTE` (7h30 par défaut :
+  avant cette heure, on est encore sur la veille), + début de semaine/mois,
+  addition de jours
 - `lib/history.ts` : calculs à partir des logs bruts — total de points par
   jour, série de jours consécutifs réussis (streak), bilan sur une plage de
   dates (semaine/mois), toutes les dates d'un mois donné (`monthDays`) pour

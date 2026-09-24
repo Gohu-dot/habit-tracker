@@ -66,7 +66,9 @@ le compte créé dans Supabase.
   - Lire 20 pages — 1 pt
   - Porter les gouttières — 1 pt
 - Cocher une case enregistre/retire une ligne dans `habit_logs` pour la
-  date du jour.
+  date du jour. La journée ne bascule pas à minuit mais à 7h30 du matin
+  (`DAY_RESET_HOUR`/`DAY_RESET_MINUTE` dans `lib/date.ts`) : les habitudes
+  de la veille restent donc cochables jusqu'à 7h30 le lendemain matin.
 - La jauge du haut affiche le total de points gagnés aujourd'hui, et passe
   au rose soutenu avec "✓ Objectif atteint" (+ une petite animation au
   moment précis où l'objectif est franchi) dès que le minimum quotidien

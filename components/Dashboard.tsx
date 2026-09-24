@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { addDays, startOfMonth, startOfWeek, todayISO, toISODate } from "@/lib/date";
+import {
+  addDays,
+  DAY_RESET_HOUR,
+  DAY_RESET_MINUTE,
+  startOfMonth,
+  startOfWeek,
+  todayISO,
+  toISODate,
+} from "@/lib/date";
 import { HABITS, DAILY_TARGET_POINTS, MAX_DAILY_POINTS, type HabitKey } from "@/lib/habits";
 import { computeDailyTotals, computeStreak, countSuccessDaysInRange, monthDays } from "@/lib/history";
 import type { HabitLog } from "@/lib/types";
@@ -24,25 +32,29 @@ export default function Dashboard({ userId }: DashboardProps) {
 
   const [today, setToday] = useState(todayISO());
 
-  // Sans ça, un onglet resté ouvert à travers minuit continuerait d'afficher
-  // les coches de la veille tant qu'on ne rafraîchit pas la page.
+  // Sans ça, un onglet resté ouvert à travers l'heure de réinitialisation
+  // continuerait d'afficher les coches de la veille tant qu'on ne
+  // rafraîchit pas la page.
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
 
     function scheduleNextRollover() {
       const now = new Date();
-      const nextMidnight = new Date(
+      let nextReset = new Date(
         now.getFullYear(),
         now.getMonth(),
-        now.getDate() + 1,
-        0,
-        0,
-        5 // petite marge de sécurité après minuit
+        now.getDate(),
+        DAY_RESET_HOUR,
+        DAY_RESET_MINUTE,
+        5 // petite marge de sécurité après l'heure de reset
       );
+      if (nextReset.getTime() <= now.getTime()) {
+        nextReset = addDays(nextReset, 1);
+      }
       timeoutId = setTimeout(() => {
         setToday(todayISO());
         scheduleNextRollover();
-      }, nextMidnight.getTime() - now.getTime());
+      }, nextReset.getTime() - now.getTime());
     }
 
     scheduleNextRollover();
