@@ -12,3 +12,11 @@ export type PeriodDay = {
   user_id: string;
   log_date: string;
 };
+
+export type PushSubscriptionRow = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth_key: string;
+};

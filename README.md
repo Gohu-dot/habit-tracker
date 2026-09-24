@@ -25,10 +25,13 @@ déploiement sur Vercel.
 4. Dans **Project Settings > API**, récupère :
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `service_role` key (⚠️ secrète, ne jamais l'exposer côté client) →
+     `SUPABASE_SERVICE_ROLE_KEY`, utilisée uniquement par le rappel du soir
+     (voir plus bas)
 
 ## 2. Configurer les variables d'environnement
 
-Copie `.env.local.example` vers `.env.local` et renseigne les deux valeurs
+Copie `.env.local.example` vers `.env.local` et renseigne les valeurs
 récupérées à l'étape précédente. Ce fichier n'est jamais commité (voir
 `.gitignore`).
 
@@ -49,11 +52,46 @@ le compte créé dans Supabase.
 ## 4. Déployer sur Vercel
 
 1. Importe ce dépôt GitHub dans [Vercel](https://vercel.com/new).
-2. Renseigne les deux variables d'environnement (`NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`) dans les réglages du projet Vercel.
+2. Renseigne toutes les variables d'environnement de `.env.local.example`
+   dans les réglages du projet Vercel (Settings > Environment Variables).
 3. Déploie. Le site est accessible via l'URL Vercel — pense à ne pas la
    partager publiquement puisque le contenu est personnel (même si l'accès
    reste protégé par la connexion Supabase).
+
+## 5. Rappel du soir (notifications push)
+
+Une tâche planifiée Vercel ("Cron Job", voir `vercel.json`) se déclenche
+chaque soir à 19h (heure de Paris) et envoie une notification si l'objectif
+du jour n'est pas encore atteint.
+
+1. **Générer les clés VAPID** (identifient ton site auprès des services de
+   notification des navigateurs) :
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+   Renseigne la clé publique dans `NEXT_PUBLIC_VAPID_PUBLIC_KEY` et la clé
+   privée dans `VAPID_PRIVATE_KEY`. `VAPID_SUBJECT` doit être l'URL de ton
+   site (ex. `https://habit-tracker-xxxx.vercel.app`).
+2. **`SUPABASE_SERVICE_ROLE_KEY`** : récupérée à l'étape 1 (Project Settings
+   > API). Elle permet à la tâche planifiée de lire tes données sans être
+   connecté — à ne jamais utiliser côté client.
+3. **`CRON_SECRET`** : une valeur aléatoire de ton choix (ex.
+   `openssl rand -hex 32` dans un terminal, ou n'importe quelle chaîne
+   longue et imprévisible). Vercel l'ajoute automatiquement dans l'en-tête
+   des appels de ses propres Cron Jobs, ce qui empêche n'importe qui
+   d'autre de déclencher l'envoi de notifications en visitant l'URL.
+4. Renseigne ces 4 variables dans Vercel (Settings > Environment
+   Variables), puis redéploie.
+5. Une fois le site installé sur l'écran d'accueil (voir plus bas), le
+   bouton **"🔔 Activer le rappel du soir"** apparaît sur le tableau de
+   bord.
+
+⚠️ La tâche est programmée en heure UTC fixe (`0 17 * * *` dans
+`vercel.json`, soit 19h en heure d'été/CEST). Comme la France change
+d'heure deux fois par an et que Vercel ne convertit pas automatiquement,
+le rappel arrivera avec 1h de décalage (18h ou 20h) pendant l'heure d'hiver
+(CET) tant que cette ligne n'est pas ajustée à la main (`0 18 * * *` pour
+rester à 19h en hiver).
 
 ## Fonctionnement
 
@@ -103,6 +141,11 @@ le compte créé dans Supabase.
   d'adresse, avec sa propre icône (voir `app/manifest.ts`, `app/icon.png`,
   `app/apple-icon.png`). Pas de mode hors-ligne : l'appli a de toute façon
   besoin du réseau pour parler à Supabase.
+- Rappel du soir : une fois activé (bouton sur le tableau de bord), une
+  tâche planifiée Vercel vérifie chaque soir à 19h si l'objectif du jour
+  est atteint et envoie une notification push sinon (voir section 5
+  ci-dessus). Sur iPhone, ça ne fonctionne que si le site a été ajouté à
+  l'écran d'accueil au préalable (contrainte d'Apple, pas du site).
 - Toutes les requêtes passent par les policies RLS de Supabase : même en
   cas de fuite de la clé publique (`anon key`, faite pour être exposée côté
   client), personne ne peut lire ou écrire les données d'un autre compte.

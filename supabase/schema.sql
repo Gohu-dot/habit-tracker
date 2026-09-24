@@ -43,3 +43,26 @@ create policy "period_days: owner insert" on period_days
   for insert with check (auth.uid() = user_id);
 create policy "period_days: owner delete" on period_days
   for delete using (auth.uid() = user_id);
+
+-- Abonnements aux notifications push (un par appareil/navigateur où le site
+-- a été installé et les notifications activées). Le endpoint identifie de
+-- façon unique un appareil auprès du service de push (Google, Mozilla...).
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth_key text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table push_subscriptions enable row level security;
+
+create policy "push_subscriptions: owner read" on push_subscriptions
+  for select using (auth.uid() = user_id);
+create policy "push_subscriptions: owner insert" on push_subscriptions
+  for insert with check (auth.uid() = user_id);
+create policy "push_subscriptions: owner update" on push_subscriptions
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "push_subscriptions: owner delete" on push_subscriptions
+  for delete using (auth.uid() = user_id);

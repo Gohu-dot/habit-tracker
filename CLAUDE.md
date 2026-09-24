@@ -59,9 +59,33 @@ le compte est créé manuellement dans Supabase.
   `localStorage`, appliquée via l'attribut `data-theme` sur `<html>`
 - `components/HabitCard.tsx`, `Gauge.tsx`, `LoginForm.tsx`
 - `app/manifest.ts`, `app/icon.png`, `app/apple-icon.png` : PWA (site
-  installable sur écran d'accueil mobile), pas de service worker/mode
-  hors-ligne volontairement — l'appli a besoin du réseau pour Supabase de
-  toute façon
+  installable sur écran d'accueil mobile) — toujours pas de mode
+  hors-ligne (l'appli a besoin du réseau pour Supabase de toute façon),
+  mais un service worker existe désormais pour les notifications push
+  (voir plus bas)
+
+## Rappel du soir (notifications push)
+- `public/sw.js` : service worker minimal, écoute juste `push` (affiche la
+  notification) et `notificationclick` (ramène au site) — pas de cache/
+  mode hors-ligne.
+- `lib/push.ts` : côté navigateur — détection du support, conversion de la
+  clé VAPID publique, abonnement/désabonnement (`PushManager`).
+- `components/PushReminderToggle.tsx` : bouton d'activation/désactivation,
+  enregistre l'abonnement dans la table `push_subscriptions` (RLS comme
+  les autres tables).
+- `lib/supabaseAdmin.ts` : client Supabase avec la clé `service_role`
+  (contourne RLS) — **réservé au code serveur**, jamais importé dans un
+  composant `"use client"`.
+- `app/api/cron/evening-check/route.ts` : route appelée chaque soir par
+  Vercel Cron (`vercel.json`, `0 17 * * *` UTC = 19h en heure d'été ; à
+  ajuster à `0 18 * * *` en heure d'hiver si on veut rester précis à
+  19h — Vercel ne gère pas les fuseaux horaires locaux). Protégée par
+  `CRON_SECRET` (Vercel l'ajoute automatiquement en en-tête
+  `Authorization` sur ses propres appels). Calcule les points du jour de
+  chaque abonné avec les mêmes règles que le reste de l'app
+  (`lib/habits.ts`, objectif variable selon `period_days`), envoie une
+  notification via `web-push` si l'objectif n'est pas atteint, et supprime
+  les abonnements expirés/révoqués (erreurs 404/410 du service de push).
 
 ## Thème clair/sombre
 - Toutes les couleurs de l'appli sont des tokens sémantiques définis dans

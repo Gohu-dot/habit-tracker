@@ -31,6 +31,7 @@ import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
 import HistorySection from "./HistorySection";
 import PointsChart from "./PointsChart";
+import PushReminderToggle from "./PushReminderToggle";
 import ThemeToggle from "./ThemeToggle";
 
 type DashboardProps = {
@@ -254,15 +255,18 @@ export default function Dashboard({ userId }: DashboardProps) {
         </p>
       )}
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-ink-soft">
-        <input
-          type="checkbox"
-          checked={isPeriodToday}
-          onChange={handleTogglePeriod}
-          className="h-4 w-4 accent-terracotta-deep"
-        />
-        J&rsquo;ai mes règles aujourd&rsquo;hui (objectif abaissé à {PERIOD_TARGET_POINTS} pts)
-      </label>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={isPeriodToday}
+            onChange={handleTogglePeriod}
+            className="h-4 w-4 accent-terracotta-deep"
+          />
+          J&rsquo;ai mes règles aujourd&rsquo;hui (objectif abaissé à {PERIOD_TARGET_POINTS} pts)
+        </label>
+        <PushReminderToggle userId={userId} />
+      </div>
 
       <div
         className={`flex items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm ${
