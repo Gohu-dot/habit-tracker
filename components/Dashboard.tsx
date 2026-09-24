@@ -87,13 +87,25 @@ export default function Dashboard({ userId }: DashboardProps) {
         supabase.from("period_days").select("*").gte("log_date", sinceDate),
       ]);
       if (ignore) return;
-      if (habitLogsRes.error || periodDaysRes.error) {
-        const error = habitLogsRes.error ?? periodDaysRes.error;
-        console.error(error);
-        setErrorMessage("Impossible de charger les habitudes : " + error!.message);
+
+      // Les deux requêtes sont indépendantes : si l'une échoue (ex. table
+      // pas encore migrée), on affiche quand même les données de l'autre
+      // plutôt que de tout masquer.
+      const errors: string[] = [];
+      if (habitLogsRes.error) {
+        console.error(habitLogsRes.error);
+        errors.push("habitudes (" + habitLogsRes.error.message + ")");
       } else {
         setLogs(habitLogsRes.data ?? []);
+      }
+      if (periodDaysRes.error) {
+        console.error(periodDaysRes.error);
+        errors.push("jours de règles (" + periodDaysRes.error.message + ")");
+      } else {
         setPeriodDayRows(periodDaysRes.data ?? []);
+      }
+      if (errors.length > 0) {
+        setErrorMessage("Impossible de charger : " + errors.join(" · "));
       }
       setLoading(false);
     }
