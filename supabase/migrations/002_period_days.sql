@@ -2,11 +2,9 @@
 -- À exécuter dans Supabase (SQL Editor, nouvelle requête vide) sur un
 -- projet qui a déjà le schéma du système de points (001_points_system.sql).
 --
--- Rejouable sans erreur (policies supprimées puis recréées).
-
-drop policy if exists "period_days: owner read" on period_days;
-drop policy if exists "period_days: owner insert" on period_days;
-drop policy if exists "period_days: owner delete" on period_days;
+-- Rejouable sans erreur (la table est créée en premier, avant qu'on touche
+-- à ses policies : "drop policy ... on period_days" échoue sinon si la
+-- table n'existe pas encore, même avec "if exists" sur la policy).
 
 create table if not exists period_days (
   id uuid primary key default gen_random_uuid(),
@@ -17,6 +15,10 @@ create table if not exists period_days (
 );
 
 alter table period_days enable row level security;
+
+drop policy if exists "period_days: owner read" on period_days;
+drop policy if exists "period_days: owner insert" on period_days;
+drop policy if exists "period_days: owner delete" on period_days;
 
 create policy "period_days: owner read" on period_days
   for select using (auth.uid() = user_id);
