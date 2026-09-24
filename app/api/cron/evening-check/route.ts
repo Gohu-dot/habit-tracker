@@ -10,10 +10,14 @@ export const dynamic = "force-dynamic";
 // requêtes déclenchées par ses propres Cron Jobs quand cette variable
 // d'environnement est définie — ça évite que n'importe qui puisse
 // déclencher l'envoi de notifications en visitant cette URL.
+// Le paramètre ?secret=... est accepté en plus, pour pouvoir déclencher un
+// test manuel depuis un navigateur (pas moyen d'y régler un en-tête).
 function isAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return false;
-  return request.headers.get("authorization") === `Bearer ${cronSecret}`;
+  if (request.headers.get("authorization") === `Bearer ${cronSecret}`) return true;
+  const secretParam = request.nextUrl.searchParams.get("secret");
+  return secretParam === cronSecret;
 }
 
 export async function GET(request: NextRequest) {
