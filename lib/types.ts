@@ -19,4 +19,5 @@ export type PushSubscriptionRow = {
   endpoint: string;
   p256dh: string;
   auth_key: string;
+  reminder_hour: number;
 };

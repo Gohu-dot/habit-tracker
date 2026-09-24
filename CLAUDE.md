@@ -27,11 +27,14 @@ le compte est créé manuellement dans Supabase.
   addition de jours
 - `lib/history.ts` : calculs à partir des logs bruts — total de points par
   jour, `targetForDay(day, periodDays)` (objectif variable selon si le jour
-  est marqué "règles"), série de jours consécutifs réussis (streak), bilan
-  sur une plage de dates (semaine/mois), toutes les dates d'un mois donné
-  (`monthDays`) pour le calendrier. **Toute fonction qui compare des points
-  à un objectif prend `periodDays` en paramètre** — ne jamais réintroduire
-  une comparaison à `DAILY_TARGET_POINTS` en dur.
+  est marqué "règles"), série de jours consécutifs réussis en cours
+  (`computeStreak`) et record absolu sur la plage disponible
+  (`computeBestStreak` — ne traite pas le jour en cours spécialement,
+  contrairement à `computeStreak`, puisqu'un record ne "casse" jamais),
+  bilan sur une plage de dates (semaine/mois), toutes les dates d'un mois
+  donné (`monthDays`) pour le calendrier. **Toute fonction qui compare des
+  points à un objectif prend `periodDays` en paramètre** — ne jamais
+  réintroduire une comparaison à `DAILY_TARGET_POINTS` en dur.
 - `lib/phrases.ts` : pools de phrases (drôles / valorisantes, variantes
   "règles" plus douces) + `pickDailyPhrase` (tirage stable sur la journée
   via un hash de la date, pas de re-tirage à chaque coche)
@@ -70,22 +73,33 @@ le compte est créé manuellement dans Supabase.
   mode hors-ligne.
 - `lib/push.ts` : côté navigateur — détection du support, conversion de la
   clé VAPID publique, abonnement/désabonnement (`PushManager`).
-- `components/PushReminderToggle.tsx` : bouton d'activation/désactivation,
-  enregistre l'abonnement dans la table `push_subscriptions` (RLS comme
-  les autres tables).
+- `components/PushReminderToggle.tsx` : bouton d'activation/désactivation +
+  menu déroulant de l'heure de rappel (0-23h), enregistre l'abonnement et
+  l'heure choisie (`reminder_hour`) dans la table `push_subscriptions` (RLS
+  comme les autres tables, y compris une policy UPDATE pour l'upsert et le
+  changement d'heure).
 - `lib/supabaseAdmin.ts` : client Supabase avec la clé `service_role`
   (contourne RLS) — **réservé au code serveur**, jamais importé dans un
   composant `"use client"`.
-- `app/api/cron/evening-check/route.ts` : route appelée chaque soir par
-  Vercel Cron (`vercel.json`, `0 17 * * *` UTC = 19h en heure d'été ; à
-  ajuster à `0 18 * * *` en heure d'hiver si on veut rester précis à
-  19h — Vercel ne gère pas les fuseaux horaires locaux). Protégée par
-  `CRON_SECRET` (Vercel l'ajoute automatiquement en en-tête
-  `Authorization` sur ses propres appels). Calcule les points du jour de
-  chaque abonné avec les mêmes règles que le reste de l'app
-  (`lib/habits.ts`, objectif variable selon `period_days`), envoie une
-  notification via `web-push` si l'objectif n'est pas atteint, et supprime
-  les abonnements expirés/révoqués (erreurs 404/410 du service de push).
+- `app/api/cron/evening-check/route.ts` : route appelée **chaque heure**
+  par Vercel Cron (`vercel.json`, `0 * * * *`). Calcule l'heure actuelle à
+  Paris via `Intl.DateTimeFormat(..., { timeZone: "Europe/Paris" })` — pas
+  un décalage UTC codé en dur, donc pas d'ajustement manuel au changement
+  d'heure été/hiver — et ne traite que les abonnements dont `reminder_hour`
+  correspond. Protégée par `CRON_SECRET` (Vercel l'ajoute automatiquement
+  en en-tête `Authorization` sur ses propres appels) ; un appel manuel via
+  `?secret=...` reste possible pour tester et ignore volontairement le
+  filtre d'heure (`isManualTest`), sinon injouable en dehors de l'heure
+  choisie. Calcule les points du jour de chaque abonné avec les mêmes
+  règles que le reste de l'app (`lib/habits.ts`, objectif variable selon
+  `period_days`), envoie une notification via `web-push` si l'objectif
+  n'est pas atteint, et supprime les abonnements expirés/révoqués (erreurs
+  404/410 du service de push).
+- ⚠️ Un Cron Job qui tourne plus d'une fois/jour nécessite un plan Vercel
+  payant (Pro) ; le plan gratuit (Hobby) limite à une exécution par jour.
+  Si ça bloque, solution de repli sans dépendre du Cron Job Vercel : un
+  service externe gratuit (ex. cron-job.org) qui appelle
+  `/api/cron/evening-check?secret=...` toutes les heures.
 
 ## Thème clair/sombre
 - Toutes les couleurs de l'appli sont des tokens sémantiques définis dans

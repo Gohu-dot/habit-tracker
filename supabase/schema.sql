@@ -53,6 +53,8 @@ create table if not exists push_subscriptions (
   endpoint text not null unique,
   p256dh text not null,
   auth_key text not null,
+  -- Heure locale (Europe/Paris, 0-23) à laquelle envoyer le rappel du soir.
+  reminder_hour smallint not null default 19 check (reminder_hour between 0 and 23),
   created_at timestamptz not null default now()
 );
 

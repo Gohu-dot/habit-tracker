@@ -9,6 +9,7 @@ type HistorySectionProps = {
   today: string;
   periodDays: ReadonlySet<string>;
   streak: number;
+  bestStreak: number;
   weekStats: RangeStats;
   monthStats: RangeStats;
 };
@@ -32,6 +33,7 @@ export default function HistorySection({
   today,
   periodDays,
   streak,
+  bestStreak,
   weekStats,
   monthStats,
 }: HistorySectionProps) {
@@ -48,6 +50,15 @@ export default function HistorySection({
             </>
           ) : (
             <span className="text-ink-soft">Pas encore de série en cours</span>
+          )}
+          {bestStreak > 0 && (
+            <span className="font-normal text-ink-soft">
+              {" "}
+              ·{" "}
+              {streak >= bestStreak
+                ? "🏆 record personnel !"
+                : `record perso : ${bestStreak} jour${bestStreak > 1 ? "s" : ""}`}
+            </span>
           )}
         </p>
         <p className="text-sm text-ink-soft">

@@ -61,8 +61,12 @@ le compte créé dans Supabase.
 ## 5. Rappel du soir (notifications push)
 
 Une tâche planifiée Vercel ("Cron Job", voir `vercel.json`) se déclenche
-chaque soir à 19h (heure de Paris) et envoie une notification si l'objectif
-du jour n'est pas encore atteint.
+**chaque heure** et envoie une notification à celles et ceux dont c'est
+l'heure de rappel choisie, si l'objectif du jour n'est pas encore atteint.
+L'heure est réglable directement depuis le site (menu déroulant à côté du
+bouton d'activation) et le calcul de "quelle heure est-il à Paris"
+(`app/api/cron/evening-check/route.ts`) gère automatiquement le changement
+d'heure été/hiver — pas d'ajustement manuel nécessaire.
 
 1. **Générer les clés VAPID** (identifient ton site auprès des services de
    notification des navigateurs) :
@@ -79,19 +83,22 @@ du jour n'est pas encore atteint.
    `openssl rand -hex 32` dans un terminal, ou n'importe quelle chaîne
    longue et imprévisible). Vercel l'ajoute automatiquement dans l'en-tête
    des appels de ses propres Cron Jobs, ce qui empêche n'importe qui
-   d'autre de déclencher l'envoi de notifications en visitant l'URL.
+   d'autre de déclencher l'envoi de notifications en visitant l'URL. Un
+   appel manuel de test reste possible via `?secret=...` dans l'URL (voir
+   le paramètre `isManualTest` dans la route).
 4. Renseigne ces 4 variables dans Vercel (Settings > Environment
    Variables), puis redéploie.
-5. Une fois le site installé sur l'écran d'accueil (voir plus bas), le
-   bouton **"🔔 Activer le rappel du soir"** apparaît sur le tableau de
-   bord.
+5. Une fois le site installé sur l'écran d'accueil (voir plus bas), choisis
+   l'heure souhaitée et clique **"🔔 Activer le rappel du soir"** sur le
+   tableau de bord.
 
-⚠️ La tâche est programmée en heure UTC fixe (`0 17 * * *` dans
-`vercel.json`, soit 19h en heure d'été/CEST). Comme la France change
-d'heure deux fois par an et que Vercel ne convertit pas automatiquement,
-le rappel arrivera avec 1h de décalage (18h ou 20h) pendant l'heure d'hiver
-(CET) tant que cette ligne n'est pas ajustée à la main (`0 18 * * *` pour
-rester à 19h en hiver).
+⚠️ **Plan Vercel** : les Cron Jobs qui tournent plus d'une fois par jour
+demandent un plan Vercel payant (Pro) — le plan gratuit (Hobby) limite les
+Cron Jobs à une exécution par jour. Si le déploiement refuse la tâche
+planifiée horaire pour cette raison, une alternative gratuite existe : un
+service externe comme [cron-job.org](https://cron-job.org) peut appeler
+`https://ton-site.vercel.app/api/cron/evening-check?secret=...` toutes les
+heures à ta place, sans dépendre du Cron Job Vercel.
 
 ## Fonctionnement
 
@@ -126,12 +133,14 @@ rester à 19h en hiver).
   les jours où l'objectif est abaissé) et une infobulle au survol/tap
   (souris ou tactile) indiquant la date et le score exacts.
 - Un bloc historique affiche la série de jours consécutifs réussis
-  ("🔥 N jours d'affilée"), un bilan de la semaine et du mois en cours, et
-  un calendrier complet du mois en cours (voir `lib/history.ts` pour les
-  calculs et `components/HistorySection.tsx` pour l'affichage). Rien n'est
-  jamais supprimé en base : chaque jour reste dans `habit_logs` avec sa
-  propre date, l'appli ne fait que recharger les 90 derniers jours à
-  chaque visite pour calculer ces statistiques.
+  ("🔥 N jours d'affilée"), le **record personnel** de la plus longue série
+  jamais réalisée (dans la limite des 90 derniers jours conservés), un
+  bilan de la semaine et du mois en cours, et un calendrier complet du mois
+  en cours (voir `lib/history.ts` pour les calculs et
+  `components/HistorySection.tsx` pour l'affichage). Rien n'est jamais
+  supprimé en base : chaque jour reste dans `habit_logs` avec sa propre
+  date, l'appli ne fait que recharger les 90 derniers jours à chaque visite
+  pour calculer ces statistiques.
 - Thème clair ou sombre, au choix (icône 🌙/☀️ en haut de l'écran de
   connexion et du tableau de bord). Le choix est mémorisé dans le
   navigateur (`localStorage`) et réappliqué instantanément à chaque visite,
@@ -141,11 +150,12 @@ rester à 19h en hiver).
   d'adresse, avec sa propre icône (voir `app/manifest.ts`, `app/icon.png`,
   `app/apple-icon.png`). Pas de mode hors-ligne : l'appli a de toute façon
   besoin du réseau pour parler à Supabase.
-- Rappel du soir : une fois activé (bouton sur le tableau de bord), une
-  tâche planifiée Vercel vérifie chaque soir à 19h si l'objectif du jour
-  est atteint et envoie une notification push sinon (voir section 5
-  ci-dessus). Sur iPhone, ça ne fonctionne que si le site a été ajouté à
-  l'écran d'accueil au préalable (contrainte d'Apple, pas du site).
+- Rappel du soir : une fois activé (bouton + choix de l'heure sur le
+  tableau de bord), une tâche planifiée Vercel vérifie chaque heure si
+  c'est l'heure choisie et si l'objectif du jour est atteint, et envoie
+  une notification push sinon (voir section 5 ci-dessus). Sur iPhone, ça
+  ne fonctionne que si le site a été ajouté à l'écran d'accueil au
+  préalable (contrainte d'Apple, pas du site).
 - Toutes les requêtes passent par les policies RLS de Supabase : même en
   cas de fuite de la clé publique (`anon key`, faite pour être exposée côté
   client), personne ne peut lire ou écrire les données d'un autre compte.

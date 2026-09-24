@@ -13,6 +13,7 @@ import {
 } from "@/lib/date";
 import { HABITS, MAX_DAILY_POINTS, PERIOD_TARGET_POINTS, type HabitKey } from "@/lib/habits";
 import {
+  computeBestStreak,
   computeDailyTotals,
   computeStreak,
   countSuccessDaysInRange,
@@ -142,6 +143,16 @@ export default function Dashboard({ userId }: DashboardProps) {
   const streak = useMemo(
     () => computeStreak(dailyTotals, today, periodDays),
     [dailyTotals, today, periodDays]
+  );
+  const bestStreak = useMemo(
+    () =>
+      computeBestStreak(
+        dailyTotals,
+        periodDays,
+        addDays(todayAsDate, -(HISTORY_DAYS - 1)),
+        todayAsDate
+      ),
+    [dailyTotals, periodDays, todayAsDate]
   );
   const weekStats = useMemo(
     () => countSuccessDaysInRange(dailyTotals, startOfWeek(todayAsDate), todayAsDate, periodDays),
@@ -326,6 +337,7 @@ export default function Dashboard({ userId }: DashboardProps) {
         today={today}
         periodDays={periodDays}
         streak={streak}
+        bestStreak={bestStreak}
         weekStats={weekStats}
         monthStats={monthStats}
       />

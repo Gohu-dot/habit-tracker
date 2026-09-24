@@ -53,6 +53,33 @@ export function computeStreak(
   return streak;
 }
 
+// La plus longue série de jours consécutifs réussis sur une plage de dates
+// (record personnel), pas seulement la série en cours. Contrairement à
+// computeStreak, un jour en cours pas encore réussi n'a pas de traitement
+// spécial ici : il compte simplement comme 0 pour l'instant, ce qui
+// n'efface jamais un record déjà atteint plus tôt sur la plage.
+export function computeBestStreak(
+  dailyTotals: Map<string, number>,
+  periodDays: ReadonlySet<string>,
+  startDate: Date,
+  endDate: Date
+): number {
+  let best = 0;
+  let current = 0;
+  let cursor = new Date(startDate);
+  while (cursor <= endDate) {
+    const key = toISODate(cursor);
+    if (isSuccessDay(dailyTotals.get(key) ?? 0, targetForDay(key, periodDays))) {
+      current++;
+      if (current > best) best = current;
+    } else {
+      current = 0;
+    }
+    cursor = addDays(cursor, 1);
+  }
+  return best;
+}
+
 export type RangeStats = { successDays: number; totalDays: number };
 
 // Compte les jours réussis entre deux dates incluses (utilisé pour les
