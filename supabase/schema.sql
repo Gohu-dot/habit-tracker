@@ -23,3 +23,23 @@ create policy "habit_logs: owner insert" on habit_logs
   for insert with check (auth.uid() = user_id);
 create policy "habit_logs: owner delete" on habit_logs
   for delete using (auth.uid() = user_id);
+
+-- Jours marqués comme "règles" : abaisse l'objectif du jour à
+-- PERIOD_TARGET_POINTS (voir lib/habits.ts). La présence d'une ligne pour
+-- une date donnée suffit à marquer ce jour-là ; pas de colonne booléenne.
+create table if not exists period_days (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  log_date date not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, log_date)
+);
+
+alter table period_days enable row level security;
+
+create policy "period_days: owner read" on period_days
+  for select using (auth.uid() = user_id);
+create policy "period_days: owner insert" on period_days
+  for insert with check (auth.uid() = user_id);
+create policy "period_days: owner delete" on period_days
+  for delete using (auth.uid() = user_id);

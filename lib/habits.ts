@@ -37,3 +37,6 @@ export type HabitKey = (typeof HABITS)[number]["key"];
 
 export const DAILY_TARGET_POINTS = 5;
 export const MAX_DAILY_POINTS = HABITS.reduce((sum, h) => sum + h.points, 0);
+
+// Objectif abaissé les jours marqués comme "règles" (voir period_days en base).
+export const PERIOD_TARGET_POINTS = 3;

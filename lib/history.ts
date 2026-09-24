@@ -1,11 +1,16 @@
-import { HABITS, DAILY_TARGET_POINTS, type HabitKey } from "./habits";
+import { HABITS, DAILY_TARGET_POINTS, PERIOD_TARGET_POINTS, type HabitKey } from "./habits";
 import type { HabitLog } from "./types";
 import { addDays, startOfMonth, toISODate } from "./date";
 
 const POINTS_BY_KEY = new Map(HABITS.map((h) => [h.key, h.points]));
 
-export function isSuccessDay(totalPoints: number): boolean {
-  return totalPoints >= DAILY_TARGET_POINTS;
+// Objectif du jour : abaissé si ce jour est marqué "règles" (period_days).
+export function targetForDay(day: string, periodDays: ReadonlySet<string>): number {
+  return periodDays.has(day) ? PERIOD_TARGET_POINTS : DAILY_TARGET_POINTS;
+}
+
+export function isSuccessDay(totalPoints: number, target: number): boolean {
+  return totalPoints >= target;
 }
 
 // Additionne les points par date à partir des logs bruts.
@@ -19,20 +24,30 @@ export function computeDailyTotals(logs: HabitLog[]): Map<string, number> {
 }
 
 // Nombre de jours consécutifs (en remontant depuis aujourd'hui) où l'objectif
-// a été atteint. Le jour en cours ne casse pas la série tant qu'il n'est pas
-// terminé : s'il n'est pas encore réussi, on compte simplement à partir d'hier.
-export function computeStreak(dailyTotals: Map<string, number>, todayISO: string): number {
+// du jour (variable si "règles") a été atteint. Le jour en cours ne casse
+// pas la série tant qu'il n'est pas terminé : s'il n'est pas encore réussi,
+// on compte simplement à partir d'hier.
+export function computeStreak(
+  dailyTotals: Map<string, number>,
+  todayISO: string,
+  periodDays: ReadonlySet<string>
+): number {
   let streak = 0;
   let cursor = new Date(`${todayISO}T00:00:00`);
 
-  if (isSuccessDay(dailyTotals.get(todayISO) ?? 0)) {
+  if (isSuccessDay(dailyTotals.get(todayISO) ?? 0, targetForDay(todayISO, periodDays))) {
     streak++;
   }
   cursor = addDays(cursor, -1);
 
-  while (isSuccessDay(dailyTotals.get(toISODate(cursor)) ?? 0)) {
-    streak++;
-    cursor = addDays(cursor, -1);
+  while (true) {
+    const key = toISODate(cursor);
+    if (isSuccessDay(dailyTotals.get(key) ?? 0, targetForDay(key, periodDays))) {
+      streak++;
+      cursor = addDays(cursor, -1);
+    } else {
+      break;
+    }
   }
 
   return streak;
@@ -45,14 +60,16 @@ export type RangeStats = { successDays: number; totalDays: number };
 export function countSuccessDaysInRange(
   dailyTotals: Map<string, number>,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  periodDays: ReadonlySet<string>
 ): RangeStats {
   let successDays = 0;
   let totalDays = 0;
   let cursor = new Date(startDate);
   while (cursor <= endDate) {
     totalDays++;
-    if (isSuccessDay(dailyTotals.get(toISODate(cursor)) ?? 0)) successDays++;
+    const key = toISODate(cursor);
+    if (isSuccessDay(dailyTotals.get(key) ?? 0, targetForDay(key, periodDays))) successDays++;
     cursor = addDays(cursor, 1);
   }
   return { successDays, totalDays };

@@ -23,6 +23,12 @@
   --color-danger-surface: #fef2f2;
   --color-danger-border: #fecaca;
   --color-danger-text: #b91c1c;
+
+  /* Variante "jour de règles" : même logique que blush/blush-deep, teinte
+     terracotta pour rester dans la famille chaude de la palette tout en
+     étant clairement distincte du rose. */
+  --color-terracotta: #e3a988;
+  --color-terracotta-deep: #b5652f;
 }
 
 /* Thème sombre : mêmes rôles de couleur, valeurs inversées. Les classes
@@ -40,6 +46,9 @@
   --color-danger-surface: #3a1414;
   --color-danger-border: #5c1f1f;
   --color-danger-text: #f2a8a8;
+
+  --color-terracotta: #8a5a3f;
+  --color-terracotta-deep: #e0996a;
 }
 
 /* Petit feedback visuel quand l'objectif du jour vient d'être atteint. */

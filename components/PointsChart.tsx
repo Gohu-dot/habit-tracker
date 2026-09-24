@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { DAILY_TARGET_POINTS, MAX_DAILY_POINTS } from "@/lib/habits";
+import { MAX_DAILY_POINTS } from "@/lib/habits";
+import { targetForDay } from "@/lib/history";
 
 type PointsChartProps = {
   dailyTotals: Map<string, number>;
   monthDays: string[]; // toutes les dates ISO du mois en cours
   today: string;
+  periodDays: ReadonlySet<string>;
 };
 
 const WIDTH = 640;
@@ -20,7 +22,7 @@ function dayLabel(iso: string): string {
   return date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 }
 
-export default function PointsChart({ dailyTotals, monthDays, today }: PointsChartProps) {
+export default function PointsChart({ dailyTotals, monthDays, today, periodDays }: PointsChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -37,6 +39,7 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
   const points = plottedDays.map((day, i) => ({
     day,
     points: dailyTotals.get(day) ?? 0,
+    isPeriod: periodDays.has(day),
     x: xForIndex(i),
     y: yForValue(dailyTotals.get(day) ?? 0),
   }));
@@ -49,8 +52,20 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
         } Z`
       : "";
 
-  const targetY = yForValue(DAILY_TARGET_POINTS);
+  // Ligne de seuil "en escalier" : l'objectif baisse à 3 pts les jours de
+  // règles, donc ce n'est plus une simple ligne plate.
+  const targetStepPath = monthDays
+    .map((day, i) => {
+      const y = yForValue(targetForDay(day, periodDays));
+      const x = xForIndex(i);
+      if (i === 0) return `M${x},${y}`;
+      const prevY = yForValue(targetForDay(monthDays[i - 1], periodDays));
+      return `L${x},${prevY} L${x},${y}`;
+    })
+    .join(" ");
+
   const lastPoint = points[points.length - 1];
+  const todayTarget = targetForDay(today, periodDays);
 
   // Repères d'axe : 1er, mi-mois, dernier jour du mois (assez espacés pour rester lisibles).
   const xTickIndices = Array.from(
@@ -85,16 +100,14 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="w-full touch-none"
           role="img"
-          aria-label={`Points par jour en ${new Date(`${today}T00:00:00`).toLocaleDateString("fr-FR", { month: "long" })}, objectif ${DAILY_TARGET_POINTS} points par jour`}
+          aria-label={`Points par jour en ${new Date(`${today}T00:00:00`).toLocaleDateString("fr-FR", { month: "long" })}, objectif aujourd'hui ${todayTarget} points`}
           onPointerMove={handlePointerMove}
           onPointerLeave={() => setHoverIndex(null)}
         >
-          {/* Ligne de seuil (objectif quotidien) */}
-          <line
-            x1={MARGIN.left}
-            x2={WIDTH - MARGIN.right}
-            y1={targetY}
-            y2={targetY}
+          {/* Ligne de seuil (objectif quotidien, en escalier les jours de règles) */}
+          <path
+            d={targetStepPath}
+            fill="none"
             className="text-ink-soft"
             stroke="currentColor"
             strokeWidth={1}
@@ -103,11 +116,11 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
           />
           <text
             x={WIDTH - MARGIN.right}
-            y={targetY - 5}
+            y={yForValue(todayTarget) - 5}
             textAnchor="end"
             className="fill-ink-soft text-[10px]"
           >
-            Objectif : {DAILY_TARGET_POINTS} pts
+            Objectif aujourd&rsquo;hui : {todayTarget} pts
           </text>
 
           {/* Axe des jours (1er, milieu, dernier jour du mois) */}
@@ -138,9 +151,15 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
             />
           )}
 
-          {/* Petits points sur chaque jour passé */}
+          {/* Petits points sur chaque jour passé (terracotta les jours de règles) */}
           {points.map((p) => (
-            <circle key={p.day} cx={p.x} cy={p.y} r={2.5} fill="var(--color-blush-deep)" />
+            <circle
+              key={p.day}
+              cx={p.x}
+              cy={p.y}
+              r={2.5}
+              fill={p.isPeriod ? "var(--color-terracotta-deep)" : "var(--color-blush-deep)"}
+            />
           ))}
 
           {/* Repère du jour survolé/touché */}
@@ -159,7 +178,7 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
                 cx={hovered.x}
                 cy={hovered.y}
                 r={5}
-                fill="var(--color-blush-deep)"
+                fill={hovered.isPeriod ? "var(--color-terracotta-deep)" : "var(--color-blush-deep)"}
                 stroke="var(--color-ivory)"
                 strokeWidth={2}
               />
@@ -173,7 +192,7 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
                 cx={lastPoint.x}
                 cy={lastPoint.y}
                 r={5}
-                fill="var(--color-blush-deep)"
+                fill={lastPoint.isPeriod ? "var(--color-terracotta-deep)" : "var(--color-blush-deep)"}
                 stroke="var(--color-ivory)"
                 strokeWidth={2}
               />
@@ -199,6 +218,7 @@ export default function PointsChart({ dailyTotals, monthDays, today }: PointsCha
           >
             <span className="font-medium">{hovered.points} pts</span>
             <span className="text-ink-soft"> — {dayLabel(hovered.day)}</span>
+            {hovered.isPeriod && <span className="text-terracotta-deep"> · règles</span>}
           </div>
         )}
       </div>

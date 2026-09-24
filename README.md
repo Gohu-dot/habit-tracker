@@ -14,10 +14,11 @@ déploiement sur Vercel.
 1. Va sur [supabase.com](https://supabase.com), crée un compte puis un
    nouveau projet (région Europe conseillée).
 2. Dans **SQL Editor**, colle le contenu de `supabase/schema.sql` et
-   exécute-le. Cela crée la table `habit_logs`, avec des règles de sécurité
-   (Row Level Security) qui garantissent que seul le propriétaire des
-   données peut les lire ou les modifier. Le catalogue des habitudes (nom,
-   points) n'est pas en base : il vit dans le code, voir `lib/habits.ts`.
+   exécute-le. Cela crée les tables `habit_logs` et `period_days`, avec des
+   règles de sécurité (Row Level Security) qui garantissent que seul le
+   propriétaire des données peut les lire ou les modifier. Le catalogue des
+   habitudes (nom, points) n'est pas en base : il vit dans le code, voir
+   `lib/habits.ts`.
 3. Dans **Authentication > Users**, crée manuellement ton unique compte
    (e-mail + mot de passe). Il n'y a pas de page d'inscription publique :
    c'est volontaire, ce site est fait pour un seul utilisateur.
@@ -73,10 +74,19 @@ le compte créé dans Supabase.
   au rose soutenu avec "✓ Objectif atteint" (+ une petite animation au
   moment précis où l'objectif est franchi) dès que le minimum quotidien
   (5 points, `DAILY_TARGET_POINTS` dans `lib/habits.ts`) est atteint.
+- Une petite phrase (drôle en dessous de l'objectif, valorisante dès qu'il
+  est atteint) s'affiche sous la jauge du jour. Elle est tirée une fois par
+  jour dans `lib/phrases.ts` et reste stable toute la journée.
+- Une case "J'ai mes règles aujourd'hui" abaisse l'objectif du jour à
+  3 points (`PERIOD_TARGET_POINTS` dans `lib/habits.ts`) et fait basculer
+  la jauge, le calendrier, le graphique et les phrases sur une teinte
+  terracotta dédiée. La coche est mémorisée par date en base
+  (table `period_days`), donc l'historique reste exact si tu regardes en
+  arrière.
 - Un graphique (`components/PointsChart.tsx`) trace l'évolution des points
-  jour par jour sur le mois en cours, avec une ligne pointillée pour
-  l'objectif et une infobulle au survol/tap (souris ou tactile) indiquant
-  la date et le score exacts.
+  jour par jour sur le mois en cours, avec une ligne de seuil (en escalier
+  les jours où l'objectif est abaissé) et une infobulle au survol/tap
+  (souris ou tactile) indiquant la date et le score exacts.
 - Un bloc historique affiche la série de jours consécutifs réussis
   ("🔥 N jours d'affilée"), un bilan de la semaine et du mois en cours, et
   un calendrier complet du mois en cours (voir `lib/history.ts` pour les

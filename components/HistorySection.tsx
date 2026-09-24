@@ -1,12 +1,13 @@
 "use client";
 
-import { MAX_DAILY_POINTS, DAILY_TARGET_POINTS } from "@/lib/habits";
-import { isSuccessDay, mondayIndex, type RangeStats } from "@/lib/history";
+import { MAX_DAILY_POINTS, DAILY_TARGET_POINTS, PERIOD_TARGET_POINTS } from "@/lib/habits";
+import { isSuccessDay, mondayIndex, targetForDay, type RangeStats } from "@/lib/history";
 
 type HistorySectionProps = {
   dailyTotals: Map<string, number>;
   monthDays: string[]; // toutes les dates ISO du mois en cours
   today: string;
+  periodDays: ReadonlySet<string>;
   streak: number;
   weekStats: RangeStats;
   monthStats: RangeStats;
@@ -29,6 +30,7 @@ export default function HistorySection({
   dailyTotals,
   monthDays,
   today,
+  periodDays,
   streak,
   weekStats,
   monthStats,
@@ -70,10 +72,24 @@ export default function HistorySection({
           {monthDays.map((day) => {
             const isFuture = day > today;
             const isToday = day === today;
+            const isPeriod = periodDays.has(day);
             const points = dailyTotals.get(day) ?? 0;
-            const success = isSuccessDay(points);
+            const target = targetForDay(day, periodDays);
+            const success = isSuccessDay(points, target);
             const partial = points > 0 && !success;
             const dayNumber = Number(day.slice(-2));
+
+            const fillClass = isFuture
+              ? "text-ink-soft/50"
+              : success
+                ? isPeriod
+                  ? "bg-terracotta-deep font-medium text-white"
+                  : "bg-blush-deep font-medium text-white"
+                : partial
+                  ? isPeriod
+                    ? "bg-terracotta text-ink"
+                    : "bg-blush text-ink"
+                  : "bg-sand text-ink-soft";
 
             return (
               <div
@@ -81,28 +97,35 @@ export default function HistorySection({
                 title={
                   isFuture
                     ? dayLabel(day)
-                    : `${dayLabel(day)} : ${points}/${MAX_DAILY_POINTS} points${
+                    : `${dayLabel(day)} : ${points}/${MAX_DAILY_POINTS} points (objectif ${target})${
                         success ? " — objectif atteint" : ""
-                      }`
+                      }${isPeriod ? " — règles" : ""}`
                 }
-                className={`flex aspect-square items-center justify-center rounded-md text-sm ${
-                  isFuture
-                    ? "text-ink-soft/50"
-                    : success
-                      ? "bg-blush-deep font-medium text-white"
-                      : partial
-                        ? "bg-blush text-ink"
-                        : "bg-sand text-ink-soft"
-                } ${isToday ? "ring-2 ring-blush-deep ring-offset-1 ring-offset-ivory" : ""}`}
+                className={`relative flex aspect-square items-center justify-center rounded-md text-sm ${fillClass} ${
+                  isToday ? "ring-2 ring-blush-deep ring-offset-1 ring-offset-ivory" : ""
+                }`}
               >
                 {dayNumber}
+                {isPeriod && !isFuture && (
+                  <span
+                    className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-terracotta-deep"
+                    aria-hidden="true"
+                  />
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      <p className="text-xs text-ink-soft">Objectif : {DAILY_TARGET_POINTS} points/jour</p>
+      <p className="text-xs text-ink-soft">
+        Objectif : {DAILY_TARGET_POINTS} points/jour (
+        <span className="inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-terracotta-deep" aria-hidden="true" />
+          {PERIOD_TARGET_POINTS} pts les jours de règles
+        </span>
+        )
+      </p>
     </div>
   );
 }

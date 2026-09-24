@@ -11,9 +11,22 @@ import {
   todayISO,
   toISODate,
 } from "@/lib/date";
-import { HABITS, DAILY_TARGET_POINTS, MAX_DAILY_POINTS, type HabitKey } from "@/lib/habits";
-import { computeDailyTotals, computeStreak, countSuccessDaysInRange, monthDays } from "@/lib/history";
-import type { HabitLog } from "@/lib/types";
+import { HABITS, MAX_DAILY_POINTS, PERIOD_TARGET_POINTS, type HabitKey } from "@/lib/habits";
+import {
+  computeDailyTotals,
+  computeStreak,
+  countSuccessDaysInRange,
+  monthDays,
+  targetForDay,
+} from "@/lib/history";
+import {
+  HIGH_SCORE_PHRASES,
+  HIGH_SCORE_PHRASES_PERIOD,
+  LOW_SCORE_PHRASES,
+  LOW_SCORE_PHRASES_PERIOD,
+  pickDailyPhrase,
+} from "@/lib/phrases";
+import type { HabitLog, PeriodDay } from "@/lib/types";
 import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
 import HistorySection from "./HistorySection";
@@ -28,6 +41,7 @@ const HISTORY_DAYS = 90;
 
 export default function Dashboard({ userId }: DashboardProps) {
   const [logs, setLogs] = useState<HabitLog[]>([]);
+  const [periodDayRows, setPeriodDayRows] = useState<PeriodDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
@@ -68,18 +82,18 @@ export default function Dashboard({ userId }: DashboardProps) {
 
     async function loadData() {
       const sinceDate = toISODate(addDays(new Date(), -HISTORY_DAYS));
-      const { data, error } = await supabase
-        .from("habit_logs")
-        .select("*")
-        .gte("log_date", sinceDate);
+      const [habitLogsRes, periodDaysRes] = await Promise.all([
+        supabase.from("habit_logs").select("*").gte("log_date", sinceDate),
+        supabase.from("period_days").select("*").gte("log_date", sinceDate),
+      ]);
       if (ignore) return;
-      if (error) {
+      if (habitLogsRes.error || periodDaysRes.error) {
+        const error = habitLogsRes.error ?? periodDaysRes.error;
         console.error(error);
-        setErrorMessage(
-          "Impossible de charger les habitudes : " + error.message
-        );
+        setErrorMessage("Impossible de charger les habitudes : " + error!.message);
       } else {
-        setLogs(data ?? []);
+        setLogs(habitLogsRes.data ?? []);
+        setPeriodDayRows(periodDaysRes.data ?? []);
       }
       setLoading(false);
     }
@@ -89,6 +103,13 @@ export default function Dashboard({ userId }: DashboardProps) {
       ignore = true;
     };
   }, [today]);
+
+  const periodDays = useMemo(
+    () => new Set(periodDayRows.map((p) => p.log_date)),
+    [periodDayRows]
+  );
+  const isPeriodToday = periodDays.has(today);
+  const todayTarget = targetForDay(today, periodDays);
 
   const doneKeys = useMemo(
     () =>
@@ -101,20 +122,34 @@ export default function Dashboard({ userId }: DashboardProps) {
     (sum, h) => sum + h.points,
     0
   );
-  const success = totalPoints >= DAILY_TARGET_POINTS;
+  const success = totalPoints >= todayTarget;
 
   const todayAsDate = useMemo(() => new Date(`${today}T00:00:00`), [today]);
   const dailyTotals = useMemo(() => computeDailyTotals(logs), [logs]);
-  const streak = useMemo(() => computeStreak(dailyTotals, today), [dailyTotals, today]);
+  const streak = useMemo(
+    () => computeStreak(dailyTotals, today, periodDays),
+    [dailyTotals, today, periodDays]
+  );
   const weekStats = useMemo(
-    () => countSuccessDaysInRange(dailyTotals, startOfWeek(todayAsDate), todayAsDate),
-    [dailyTotals, todayAsDate]
+    () => countSuccessDaysInRange(dailyTotals, startOfWeek(todayAsDate), todayAsDate, periodDays),
+    [dailyTotals, todayAsDate, periodDays]
   );
   const monthStats = useMemo(
-    () => countSuccessDaysInRange(dailyTotals, startOfMonth(todayAsDate), todayAsDate),
-    [dailyTotals, todayAsDate]
+    () => countSuccessDaysInRange(dailyTotals, startOfMonth(todayAsDate), todayAsDate, periodDays),
+    [dailyTotals, todayAsDate, periodDays]
   );
   const currentMonthDays = useMemo(() => monthDays(todayAsDate), [todayAsDate]);
+
+  const phrase = useMemo(() => {
+    const pool = isPeriodToday
+      ? success
+        ? HIGH_SCORE_PHRASES_PERIOD
+        : LOW_SCORE_PHRASES_PERIOD
+      : success
+        ? HIGH_SCORE_PHRASES
+        : LOW_SCORE_PHRASES;
+    return pickDailyPhrase(pool, `${today}-${isPeriodToday ? "p" : "n"}-${success ? "hi" : "lo"}`);
+  }, [today, isPeriodToday, success]);
 
   // Petite animation quand on vient d'atteindre l'objectif du jour (pas au
   // premier chargement si l'objectif était déjà atteint auparavant).
@@ -155,6 +190,32 @@ export default function Dashboard({ userId }: DashboardProps) {
     }
   }
 
+  async function handleTogglePeriod() {
+    setErrorMessage(null);
+    const existing = periodDayRows.find((p) => p.log_date === today);
+    if (existing) {
+      const { error } = await supabase.from("period_days").delete().eq("id", existing.id);
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible de décocher : " + error.message);
+      } else {
+        setPeriodDayRows((prev) => prev.filter((p) => p.id !== existing.id));
+      }
+    } else {
+      const { data, error } = await supabase
+        .from("period_days")
+        .insert({ user_id: userId, log_date: today })
+        .select()
+        .single();
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible d'enregistrer : " + error.message);
+      } else if (data) {
+        setPeriodDayRows((prev) => [...prev, data]);
+      }
+    }
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut();
   }
@@ -181,6 +242,16 @@ export default function Dashboard({ userId }: DashboardProps) {
         </p>
       )}
 
+      <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-ink-soft">
+        <input
+          type="checkbox"
+          checked={isPeriodToday}
+          onChange={handleTogglePeriod}
+          className="h-4 w-4 accent-terracotta-deep"
+        />
+        J&rsquo;ai mes règles aujourd&rsquo;hui (objectif abaissé à {PERIOD_TARGET_POINTS} pts)
+      </label>
+
       <div
         className={`flex items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm ${
           celebrate ? "animate-celebrate" : ""
@@ -189,7 +260,15 @@ export default function Dashboard({ userId }: DashboardProps) {
         <Gauge
           value={totalPoints}
           target={MAX_DAILY_POINTS}
-          color={success ? "var(--color-blush-deep)" : "var(--color-blush)"}
+          color={
+            isPeriodToday
+              ? success
+                ? "var(--color-terracotta-deep)"
+                : "var(--color-terracotta)"
+              : success
+                ? "var(--color-blush-deep)"
+                : "var(--color-blush)"
+          }
           size={96}
         />
         <div>
@@ -197,27 +276,39 @@ export default function Dashboard({ userId }: DashboardProps) {
             {totalPoints} point{totalPoints > 1 ? "s" : ""} aujourd&rsquo;hui
           </p>
           <p className="text-sm text-ink-soft">
-            Objectif : {DAILY_TARGET_POINTS} points minimum par jour
+            Objectif : {todayTarget} points minimum par jour
+            {isPeriodToday ? " (abaissé — règles)" : ""}
           </p>
           {success ? (
-            <p className="mt-1 text-sm font-medium text-blush-deep">
+            <p
+              className={`mt-1 text-sm font-medium ${
+                isPeriodToday ? "text-terracotta-deep" : "text-blush-deep"
+              }`}
+            >
               {celebrate ? "✨ Objectif atteint !" : "✓ Objectif atteint"}
             </p>
           ) : (
             <p className="mt-1 text-sm text-ink-soft">
-              Encore {DAILY_TARGET_POINTS - totalPoints} point
-              {DAILY_TARGET_POINTS - totalPoints > 1 ? "s" : ""} pour atteindre l&rsquo;objectif
+              Encore {todayTarget - totalPoints} point
+              {todayTarget - totalPoints > 1 ? "s" : ""} pour atteindre l&rsquo;objectif
             </p>
           )}
+          <p className="mt-2 text-sm italic text-ink-soft">{phrase}</p>
         </div>
       </div>
 
-      <PointsChart dailyTotals={dailyTotals} monthDays={currentMonthDays} today={today} />
+      <PointsChart
+        dailyTotals={dailyTotals}
+        monthDays={currentMonthDays}
+        today={today}
+        periodDays={periodDays}
+      />
 
       <HistorySection
         dailyTotals={dailyTotals}
         monthDays={currentMonthDays}
         today={today}
+        periodDays={periodDays}
         streak={streak}
         weekStats={weekStats}
         monthStats={monthStats}
