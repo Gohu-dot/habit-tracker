@@ -17,6 +17,8 @@ import type { HabitLog } from "@/lib/types";
 import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
 import HistorySection from "./HistorySection";
+import PointsChart from "./PointsChart";
+import ThemeToggle from "./ThemeToggle";
 
 type DashboardProps = {
   userId: string;
@@ -165,13 +167,16 @@ export default function Dashboard({ userId }: DashboardProps) {
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">Mes habitudes</h1>
-        <button onClick={handleSignOut} className="text-sm text-ink-soft hover:text-ink">
-          Se déconnecter
-        </button>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <button onClick={handleSignOut} className="text-sm text-ink-soft hover:text-ink">
+            Se déconnecter
+          </button>
+        </div>
       </div>
 
       {errorMessage && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-lg border border-danger-border bg-danger-surface px-3 py-2 text-sm text-danger-text">
           {errorMessage}
         </p>
       )}
@@ -184,7 +189,7 @@ export default function Dashboard({ userId }: DashboardProps) {
         <Gauge
           value={totalPoints}
           target={MAX_DAILY_POINTS}
-          color={success ? "#B8656E" : "#E8B4B8"}
+          color={success ? "var(--color-blush-deep)" : "var(--color-blush)"}
           size={96}
         />
         <div>
@@ -206,6 +211,8 @@ export default function Dashboard({ userId }: DashboardProps) {
           )}
         </div>
       </div>
+
+      <PointsChart dailyTotals={dailyTotals} monthDays={currentMonthDays} today={today} />
 
       <HistorySection
         dailyTotals={dailyTotals}

@@ -73,6 +73,10 @@ le compte créé dans Supabase.
   au rose soutenu avec "✓ Objectif atteint" (+ une petite animation au
   moment précis où l'objectif est franchi) dès que le minimum quotidien
   (5 points, `DAILY_TARGET_POINTS` dans `lib/habits.ts`) est atteint.
+- Un graphique (`components/PointsChart.tsx`) trace l'évolution des points
+  jour par jour sur le mois en cours, avec une ligne pointillée pour
+  l'objectif et une infobulle au survol/tap (souris ou tactile) indiquant
+  la date et le score exacts.
 - Un bloc historique affiche la série de jours consécutifs réussis
   ("🔥 N jours d'affilée"), un bilan de la semaine et du mois en cours, et
   un calendrier complet du mois en cours (voir `lib/history.ts` pour les
@@ -80,6 +84,10 @@ le compte créé dans Supabase.
   jamais supprimé en base : chaque jour reste dans `habit_logs` avec sa
   propre date, l'appli ne fait que recharger les 90 derniers jours à
   chaque visite pour calculer ces statistiques.
+- Thème clair ou sombre, au choix (icône 🌙/☀️ en haut de l'écran de
+  connexion et du tableau de bord). Le choix est mémorisé dans le
+  navigateur (`localStorage`) et réappliqué instantanément à chaque visite,
+  sans flash du thème clair au chargement.
 - Le site est installable comme une application (PWA) : "Ajouter à l'écran
   d'accueil" sur téléphone ouvre le site en plein écran, sans barre
   d'adresse, avec sa propre icône (voir `app/manifest.ts`, `app/icon.png`,

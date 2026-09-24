@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ThemeToggle from "./ThemeToggle";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,10 @@ export default function LoginForm() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-sand bg-ivory p-6 shadow-sm"
       >
-        <h1 className="text-lg font-semibold text-ink">Habit Tracker</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-ink">Habit Tracker</h1>
+          <ThemeToggle />
+        </div>
         <p className="text-sm text-ink-soft">Espace privé — connexion requise.</p>
 
         <div className="space-y-1">
@@ -49,7 +53,7 @@ export default function LoginForm() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger-text">{error}</p>}
 
         <button
           type="submit"

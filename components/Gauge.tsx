@@ -35,12 +35,11 @@ export default function Gauge({ value, target, color, size = 72 }: GaugeProps) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={color}
           strokeWidth={6}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 0.3s ease" }}
+          style={{ stroke: color, transition: "stroke-dashoffset 0.3s ease" }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center text-sm font-medium text-ink">

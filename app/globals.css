@@ -3,7 +3,14 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
 
+/* Volontairement dans un bloc @theme séparé (sans "inline") : Tailwind doit
+   générer les utilitaires (bg-cream, text-ink, ...) en référençant ces
+   variables CSS via var(), pas en figeant leur valeur au build. C'est ce qui
+   permet au bloc [data-theme="dark"] plus bas de re-thémer tout le site en
+   ne changeant que la valeur des variables. */
+@theme {
   /* Palette "clean girl" : beige/crème + rose poudré */
   --color-cream: #f5efe6; /* fond de page */
   --color-ivory: #fffbf7; /* fond des cartes */
@@ -12,21 +19,42 @@
   --color-blush-deep: #b8656e; /* rose plus soutenu (texte, boutons, succès) */
   --color-ink: #4a3b35; /* texte principal */
   --color-ink-soft: #8b7d74; /* texte secondaire */
+
+  --color-danger-surface: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #b91c1c;
+}
+
+/* Thème sombre : mêmes rôles de couleur, valeurs inversées. Les classes
+   Tailwind générées ci-dessus (bg-cream, text-ink, etc.) lisent ces
+   variables CSS, donc les basculer suffit à re-thémer tout le site. */
+:root[data-theme="dark"] {
+  --color-cream: #241c19;
+  --color-ivory: #33281f;
+  --color-sand: #4a3c34;
+  --color-blush: #7d4d54;
+  --color-blush-deep: #d98d97;
+  --color-ink: #f3e9e2;
+  --color-ink-soft: #b8a89d;
+
+  --color-danger-surface: #3a1414;
+  --color-danger-border: #5c1f1f;
+  --color-danger-text: #f2a8a8;
 }
 
 /* Petit feedback visuel quand l'objectif du jour vient d'être atteint. */
 @keyframes celebrate {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(184, 101, 110, 0.25);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-blush-deep) 25%, transparent);
   }
   35% {
     transform: scale(1.02);
-    box-shadow: 0 0 0 6px rgba(184, 101, 110, 0.12);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-blush-deep) 12%, transparent);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(184, 101, 110, 0);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-blush-deep) 0%, transparent);
   }
 }
 
