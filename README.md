@@ -14,11 +14,16 @@ déploiement sur Vercel.
 1. Va sur [supabase.com](https://supabase.com), crée un compte puis un
    nouveau projet (région Europe conseillée).
 2. Dans **SQL Editor**, colle le contenu de `supabase/schema.sql` et
-   exécute-le. Cela crée les tables `habit_logs` et `period_days`, avec des
-   règles de sécurité (Row Level Security) qui garantissent que seul le
-   propriétaire des données peut les lire ou les modifier. Le catalogue des
-   habitudes (nom, points) n'est pas en base : il vit dans le code, voir
-   `lib/habits.ts`.
+   exécute-le. Cela crée les tables `habit_logs`, `period_days`,
+   `push_subscriptions` et `recipes`, avec des règles de sécurité (Row
+   Level Security) qui garantissent que seul le propriétaire des données
+   peut les lire ou les modifier. Le catalogue des habitudes (nom, points)
+   et celui des catégories/statuts de recettes ne sont pas en base : ils
+   vivent dans le code, voir `lib/habits.ts` et `lib/recipes.ts`.
+   Si le projet existait déjà avant l'ajout d'une fonctionnalité, exécute
+   plutôt le script de migration correspondant dans `supabase/migrations/`
+   (ex. `005_recipes.sql` pour l'onglet Recettes) au lieu de rejouer tout
+   `schema.sql`.
 3. Dans **Authentication > Users**, crée manuellement ton unique compte
    (e-mail + mot de passe). Il n'y a pas de page d'inscription publique :
    c'est volontaire, ce site est fait pour un seul utilisateur.
@@ -178,6 +183,14 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
 - Toutes les requêtes passent par les policies RLS de Supabase : même en
   cas de fuite de la clé publique (`anon key`, faite pour être exposée côté
   client), personne ne peut lire ou écrire les données d'un autre compte.
+- Un onglet **Recettes** (à côté de "Habitudes" en haut de l'écran) permet
+  de garder les recettes saines repérées sur TikTok/Instagram : titre, lien
+  vers la vidéo, catégorie (petit-déj, déjeuner, dîner, encas, dessert,
+  boisson) et note libre optionnelle. Chaque fiche a un statut — à tester,
+  testée, validée ⭐ — qui avance d'un clic sur la pastille. Filtres par
+  catégorie et par statut pour retrouver une recette dans une liste qui
+  grossit. Pas d'aperçu vidéo intégré (TikTok/Instagram ne s'y prêtent pas
+  bien) : juste un lien propre qui ouvre la vidéo dans un nouvel onglet.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 

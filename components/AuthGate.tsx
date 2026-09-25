@@ -4,9 +4,15 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import LoginForm from "./LoginForm";
-import Dashboard from "./Dashboard";
 
-export default function AuthGate() {
+type AuthGateProps = {
+  // Render-prop plutôt qu'un composant fixe : chaque route (habitudes,
+  // recettes...) décide quoi afficher une fois connecté, AuthGate ne gère
+  // que la session.
+  children: (userId: string) => React.ReactNode;
+};
+
+export default function AuthGate({ children }: AuthGateProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -25,5 +31,5 @@ export default function AuthGate() {
 
   if (checkingSession) return null;
 
-  return session ? <Dashboard userId={session.user.id} /> : <LoginForm />;
+  return session ? <>{children(session.user.id)}</> : <LoginForm />;
 }

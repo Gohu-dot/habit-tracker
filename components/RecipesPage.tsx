@@ -1,0 +1,259 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  RECIPE_CATEGORIES,
+  RECIPE_STATUSES,
+  nextRecipeStatus,
+  type RecipeCategoryKey,
+} from "@/lib/recipes";
+import type { Recipe } from "@/lib/types";
+import AppHeader from "./AppHeader";
+import RecipeCard from "./RecipeCard";
+
+type RecipesPageProps = {
+  userId: string;
+};
+
+const CATEGORY_FILTER_ALL = "toutes";
+const STATUS_FILTER_ALL = "tous";
+
+export default function RecipesPage({ userId }: RecipesPageProps) {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [category, setCategory] = useState<RecipeCategoryKey>(RECIPE_CATEGORIES[0].key);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [categoryFilter, setCategoryFilter] = useState<string>(CATEGORY_FILTER_ALL);
+  const [statusFilter, setStatusFilter] = useState<string>(STATUS_FILTER_ALL);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadRecipes() {
+      const { data, error } = await supabase
+        .from("recipes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (ignore) return;
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible de charger les recettes : " + error.message);
+      } else {
+        setRecipes(data ?? []);
+      }
+      setLoading(false);
+    }
+
+    loadRecipes();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !url.trim()) return;
+    setErrorMessage(null);
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("recipes")
+      .insert({
+        user_id: userId,
+        title: title.trim(),
+        url: url.trim(),
+        category,
+        note: note.trim() || null,
+      })
+      .select()
+      .single();
+    setSaving(false);
+    if (error) {
+      console.error(error);
+      setErrorMessage("Impossible d'ajouter la recette : " + error.message);
+    } else if (data) {
+      setRecipes((prev) => [data, ...prev]);
+      setTitle("");
+      setUrl("");
+      setNote("");
+    }
+  }
+
+  async function handleStatusCycle(recipe: Recipe) {
+    setErrorMessage(null);
+    const next = nextRecipeStatus(recipe.status);
+    const { error } = await supabase.from("recipes").update({ status: next }).eq("id", recipe.id);
+    if (error) {
+      console.error(error);
+      setErrorMessage("Impossible de changer le statut : " + error.message);
+    } else {
+      setRecipes((prev) => prev.map((r) => (r.id === recipe.id ? { ...r, status: next } : r)));
+    }
+  }
+
+  async function handleDelete(recipe: Recipe) {
+    setErrorMessage(null);
+    const { error } = await supabase.from("recipes").delete().eq("id", recipe.id);
+    if (error) {
+      console.error(error);
+      setErrorMessage("Impossible de supprimer la recette : " + error.message);
+    } else {
+      setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
+    }
+  }
+
+  const filteredRecipes = useMemo(
+    () =>
+      recipes.filter(
+        (r) =>
+          (categoryFilter === CATEGORY_FILTER_ALL || r.category === categoryFilter) &&
+          (statusFilter === STATUS_FILTER_ALL || r.status === statusFilter)
+      ),
+    [recipes, categoryFilter, statusFilter]
+  );
+
+  if (loading) {
+    return <p className="p-8 text-ink-soft">Chargement...</p>;
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-8">
+      <AppHeader />
+
+      {errorMessage && (
+        <p className="rounded-lg border border-danger-border bg-danger-surface px-3 py-2 text-sm text-danger-text">
+          {errorMessage}
+        </p>
+      )}
+
+      <form
+        onSubmit={handleAdd}
+        className="space-y-3 rounded-xl border border-sand bg-ivory p-4 shadow-sm"
+      >
+        <p className="text-sm font-medium text-ink">Ajouter une recette</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-xs text-ink-soft" htmlFor="recipe-title">
+              Titre
+            </label>
+            <input
+              id="recipe-title"
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex. Bowl protéiné au poulet"
+              className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-ink-soft" htmlFor="recipe-url">
+              Lien (TikTok, Instagram...)
+            </label>
+            <input
+              id="recipe-url"
+              type="url"
+              required
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-ink-soft" htmlFor="recipe-category">
+              Catégorie
+            </label>
+            <select
+              id="recipe-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as RecipeCategoryKey)}
+              className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+            >
+              {RECIPE_CATEGORIES.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-ink-soft" htmlFor="recipe-note">
+              Note (optionnel)
+            </label>
+            <input
+              id="recipe-note"
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ex. remplacer le riz par du quinoa"
+              className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+            />
+          </div>
+        </div>
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-md bg-blush-deep px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {saving ? "Ajout..." : "Ajouter"}
+        </button>
+      </form>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+        >
+          <option value={CATEGORY_FILTER_ALL}>Toutes les catégories</option>
+          {RECIPE_CATEGORIES.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+        >
+          <option value={STATUS_FILTER_ALL}>Tous les statuts</option>
+          {RECIPE_STATUSES.map((s) => (
+            <option key={s.key} value={s.key}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-ink-soft">
+          {filteredRecipes.length} recette{filteredRecipes.length > 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {filteredRecipes.length === 0 ? (
+        <p className="rounded-xl border border-sand bg-ivory p-4 text-sm text-ink-soft shadow-sm">
+          {recipes.length === 0
+            ? "Aucune recette pour l'instant — ajoute-en une avec le formulaire ci-dessus."
+            : "Aucune recette ne correspond à ces filtres."}
+        </p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {filteredRecipes.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              onCycleStatus={() => handleStatusCycle(recipe)}
+              onDelete={() => handleDelete(recipe)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

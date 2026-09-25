@@ -68,3 +68,29 @@ create policy "push_subscriptions: owner update" on push_subscriptions
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "push_subscriptions: owner delete" on push_subscriptions
   for delete using (auth.uid() = user_id);
+
+-- Recettes saines repérées sur les réseaux (TikTok, Instagram...) : juste un
+-- lien à conserver, pas de tentative d'intégrer la vidéo elle-même. La
+-- catégorie et le statut sont des catalogues fixes (voir lib/recipes.ts),
+-- comme le catalogue des habitudes.
+create table if not exists recipes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  title text not null,
+  url text not null,
+  category text not null,
+  status text not null default 'a_tester' check (status in ('a_tester', 'testee', 'validee')),
+  note text,
+  created_at timestamptz not null default now()
+);
+
+alter table recipes enable row level security;
+
+create policy "recipes: owner read" on recipes
+  for select using (auth.uid() = user_id);
+create policy "recipes: owner insert" on recipes
+  for insert with check (auth.uid() = user_id);
+create policy "recipes: owner update" on recipes
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "recipes: owner delete" on recipes
+  for delete using (auth.uid() = user_id);

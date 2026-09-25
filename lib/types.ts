@@ -1,4 +1,5 @@
 import type { HabitKey } from "./habits";
+import type { RecipeCategoryKey, RecipeStatusKey } from "./recipes";
 
 export type HabitLog = {
   id: string;
@@ -20,4 +21,15 @@ export type PushSubscriptionRow = {
   p256dh: string;
   auth_key: string;
   reminder_hour: number;
+};
+
+export type Recipe = {
+  id: string;
+  user_id: string;
+  title: string;
+  url: string;
+  category: RecipeCategoryKey;
+  status: RecipeStatusKey;
+  note: string | null;
+  created_at: string;
 };

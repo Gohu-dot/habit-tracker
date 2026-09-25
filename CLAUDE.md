@@ -18,6 +18,12 @@ le compte est créé manuellement dans Supabase.
   `DAILY_TARGET_POINTS` (objectif quotidien) + `PERIOD_TARGET_POINTS`
   (objectif abaissé les jours de règles) — source de vérité unique, rien de
   tout ça n'est en base ni modifiable depuis l'interface
+- `lib/recipes.ts` : catalogue fixe des catégories de recettes (petit-déj,
+  déjeuner, dîner, encas, dessert, boisson) et des statuts (à tester /
+  testée / validée), même logique que `lib/habits.ts` — fixe dans le code,
+  pas en base. `nextRecipeStatus` fait avancer le statut d'un cran (cycle
+  à_tester → testée → validée → à_tester), utilisé par le bouton-pastille
+  sur chaque fiche recette plutôt qu'un menu déroulant.
 - `lib/supabaseClient.ts` : client Supabase (variables d'env `NEXT_PUBLIC_*`)
 - `lib/types.ts` : types `HabitLog` (une habitude cochée un jour) et
   `PeriodDay` (un jour marqué "règles")
@@ -50,7 +56,18 @@ le compte est créé manuellement dans Supabase.
   policies RLS
 - `supabase/migrations/` : scripts de migration ponctuels à exécuter à la
   main dans le SQL Editor Supabase (pas de migration automatique)
-- `components/AuthGate.tsx` : bascule connexion / tableau de bord
+- `components/AuthGate.tsx` : bascule connexion / contenu authentifié. Prend
+  un render-prop `children: (userId) => ReactNode` plutôt qu'un composant
+  fixe, pour servir plusieurs pages (`app/page.tsx` → `Dashboard`,
+  `app/recettes/page.tsx` → `RecipesPage`) sans dupliquer la logique de
+  session. Ses deux appelants sont des Client Components (`"use client"`
+  en tête de fichier) : un Server Component ne peut pas passer une fonction
+  en prop à un composant client (erreur de build sinon).
+- `components/AppHeader.tsx` : header partagé par toutes les pages
+  authentifiées (navigation `NavTabs`, `ThemeToggle`, déconnexion) — évite
+  de dupliquer `handleSignOut` dans chaque page.
+- `components/NavTabs.tsx` : liens Habitudes/Recettes, onglet actif détecté
+  via `usePathname()`.
 - `components/Dashboard.tsx` : charge les logs et les jours de règles des
   90 derniers jours (pas seulement aujourd'hui, pour alimenter
   l'historique), calcule les points du jour + les stats d'historique +
@@ -91,6 +108,26 @@ le compte est créé manuellement dans Supabase.
   hors-ligne (l'appli a besoin du réseau pour Supabase de toute façon),
   mais un service worker existe désormais pour les notifications push
   (voir plus bas)
+
+## Onglet Recettes
+- `app/recettes/page.tsx` : route dédiée, même schéma que `app/page.tsx`
+  (`AuthGate` + composant de page).
+- `components/RecipesPage.tsx` : charge les recettes de l'utilisateur
+  (RLS filtre automatiquement, pas de `.eq("user_id", ...)` explicite —
+  même pattern que `habit_logs`/`period_days`), formulaire d'ajout
+  toujours visible (titre + lien + catégorie + note optionnelle), filtres
+  par catégorie/statut, liste de `RecipeCard`.
+- `components/RecipeCard.tsx` : une fiche = titre cliquable (ouvre le lien
+  TikTok/Instagram dans un nouvel onglet), pastille catégorie, pastille
+  statut cliquable qui fait avancer le cycle (`nextRecipeStatus`), note
+  optionnelle, bouton supprimer. Volontairement pas d'aperçu/miniature de
+  la vidéo (dépendrait d'un service oEmbed tiers fragile) : juste un lien
+  propre.
+- Table `recipes` (voir `supabase/schema.sql` /
+  `supabase/migrations/005_recipes.sql`) : `title`, `url`, `category`,
+  `status` (contrainte `check` en base sur les 3 valeurs), `note`
+  (nullable). RLS classique (`user_id = auth.uid()`) sur les 4 opérations,
+  y compris `update` (nécessaire pour le changement de statut).
 
 ## Rappel du soir (notifications push)
 - `public/sw.js` : service worker minimal, écoute juste `push` (affiche la
