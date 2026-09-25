@@ -10,36 +10,18 @@ export const dynamic = "force-dynamic";
 // requêtes déclenchées par ses propres Cron Jobs quand cette variable
 // d'environnement est définie — ça évite que n'importe qui puisse
 // déclencher l'envoi de notifications en visitant cette URL.
-function isAuthorizedViaHeader(request: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return false;
-  return request.headers.get("authorization") === `Bearer ${cronSecret}`;
-}
-
 // Le paramètre ?secret=... est accepté en plus, pour pouvoir déclencher un
-// test manuel depuis un navigateur (pas moyen d'y régler un en-tête). Un
-// test manuel ignore volontairement le filtre d'heure ci-dessous, sinon il
-// ne serait utilisable qu'une heure par jour.
-function isManualTest(request: NextRequest): boolean {
+// test manuel depuis un navigateur (pas moyen d'y régler un en-tête).
+function isAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return false;
-  return request.nextUrl.searchParams.get("secret") === cronSecret;
-}
-
-// Heure actuelle (0-23) à Paris, DST géré automatiquement par le fuseau
-// horaire IANA plutôt qu'un décalage UTC codé en dur.
-function currentHourInParis(): number {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Paris",
-    hour: "numeric",
-    hourCycle: "h23",
-  });
-  return Number(formatter.format(new Date()));
+  if (request.headers.get("authorization") === `Bearer ${cronSecret}`) return true;
+  const secretParam = request.nextUrl.searchParams.get("secret");
+  return secretParam === cronSecret;
 }
 
 export async function GET(request: NextRequest) {
-  const manualTest = isManualTest(request);
-  if (!manualTest && !isAuthorizedViaHeader(request)) {
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -52,11 +34,10 @@ export async function GET(request: NextRequest) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const supabase = createSupabaseAdminClient();
-  // Cette tâche se déclenche chaque heure, loin de minuit dans la plage
-  // utile (matin/soir) : pas besoin de reproduire ici le décalage de 7h30
-  // utilisé côté client (lib/date.ts).
+  // Cette tâche se déclenche une fois par jour en soirée, loin de minuit :
+  // pas besoin de reproduire ici le décalage de 7h30 utilisé côté client
+  // (lib/date.ts).
   const today = todayISO();
-  const currentHour = currentHourInParis();
 
   const [habitLogsRes, periodDaysRes, subscriptionsRes] = await Promise.all([
     supabase.from("habit_logs").select("habit_key, user_id").eq("log_date", today),
@@ -81,15 +62,9 @@ export async function GET(request: NextRequest) {
 
   let sent = 0;
   let skipped = 0;
-  let notThisHour = 0;
   let removed = 0;
 
   for (const sub of subscriptionsRes.data ?? []) {
-    if (!manualTest && sub.reminder_hour !== currentHour) {
-      notThisHour++;
-      continue;
-    }
-
     const total = totalsByUser.get(sub.user_id) ?? 0;
     const target = periodUserIds.has(sub.user_id) ? PERIOD_TARGET_POINTS : DAILY_TARGET_POINTS;
 
@@ -121,5 +96,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ today, currentHour, sent, skipped, notThisHour, removed });
+  return NextResponse.json({ today, sent, skipped, removed });
 }
