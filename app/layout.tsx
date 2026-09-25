@@ -45,6 +45,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               var stored = localStorage.getItem('theme');
               if (stored === 'dark' || stored === 'light') {
                 document.documentElement.setAttribute('data-theme', stored);
+              } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
               }
             } catch (e) {}
           `}

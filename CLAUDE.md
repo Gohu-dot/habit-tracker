@@ -32,9 +32,17 @@ le compte est créé manuellement dans Supabase.
   (`computeBestStreak` — ne traite pas le jour en cours spécialement,
   contrairement à `computeStreak`, puisqu'un record ne "casse" jamais),
   bilan sur une plage de dates (semaine/mois), toutes les dates d'un mois
-  donné (`monthDays`) pour le calendrier. **Toute fonction qui compare des
-  points à un objectif prend `periodDays` en paramètre** — ne jamais
-  réintroduire une comparaison à `DAILY_TARGET_POINTS` en dur.
+  donné (`monthDays`) pour le calendrier, taux de complétion par habitude sur
+  une plage (`computeHabitStats`, utilisé pour repérer l'habitude la plus
+  loupée). **Toute fonction qui compare des points à un objectif prend
+  `periodDays` en paramètre** — ne jamais réintroduire une comparaison à
+  `DAILY_TARGET_POINTS` en dur.
+- `lib/streakMilestones.ts` : paliers de série fixes (3, 7, 14, 21, 30, 60,
+  100, 180, 365 jours) avec un label dédié chacun — `reachedMilestone`
+  (le plus haut déjà atteint) et `nextMilestone` (le suivant + jours
+  restants), tous deux purs fonctions de `streak`, pas de state ni de
+  persistance de "premier jour où le palier a été atteint" (pas de
+  confetti one-shot, juste un affichage stable tant que la série tient).
 - `lib/phrases.ts` : pools de phrases (drôles / valorisantes, variantes
   "règles" plus douces) + `pickDailyPhrase` (tirage stable sur la journée
   via un hash de la date, pas de re-tirage à chaque coche)
@@ -49,11 +57,28 @@ le compte est créé manuellement dans Supabase.
   l'objectif/la phrase du jour selon `periodDays`, gère le cocher/décocher
   (habitudes et case "règles"), déclenche l'animation de succès
   (`animate-celebrate` dans `globals.css`) au moment précis où l'objectif
-  est atteint
-- `components/HistorySection.tsx` : série en cours, bilan semaine/mois,
+  est atteint. Les handlers de coche (`handleToggleForDate`,
+  `handleTogglePeriodForDate`) sont génériques sur une date : la grille du
+  jour les appelle avec `today` codé en dur (`handleToggle`/
+  `handleTogglePeriod`), et `EditPastDay` les appelle avec la date choisie —
+  ne pas dupliquer cette logique si un nouvel endroit doit un jour modifier
+  une habitude sur une date arbitraire.
+- `components/HistorySection.tsx` : série en cours, record perso, palier de
+  série atteint/à venir (`lib/streakMilestones.ts`), bilan semaine/mois,
   calendrier complet du mois en cours (grille 7 colonnes alignée sur le
   jour de la semaine, jours futurs affichés en grisé/neutre, jours de
   règles teintés terracotta avec un petit point indicateur)
+- `components/HabitStatsSection.tsx` : taux de complétion par habitude sur
+  les 30 derniers jours glissants (`computeHabitStats`), barres triées du
+  pire au meilleur taux pour repérer d'un coup d'œil l'habitude la plus
+  loupée — pas de librairie de charts, juste des barres CSS.
+- `components/EditPastDay.tsx` : panneau repliable (fermé par défaut) pour
+  corriger un jour passé — sélecteur de date borné entre `today` et le
+  début de la fenêtre de 90 jours chargée par `Dashboard`, puis les mêmes
+  6 habitudes + la case "règles" pour cette date-là. Ne fait aucun appel
+  Supabase lui-même : reçoit les données (`doneKeysForDate`,
+  `isPeriodForDate`) et les handlers (`onToggleHabit`, `onTogglePeriod`) de
+  `Dashboard`, qui reste seul propriétaire du state `logs`/`periodDayRows`.
 - `components/PointsChart.tsx` : graphique SVG fait main (pas de librairie
   de charts) de l'évolution des points du mois, avec ligne de seuil en
   escalier (l'objectif baisse les jours de règles) et infobulle
@@ -125,6 +150,16 @@ le compte est créé manuellement dans Supabase.
   anti-flash (`app/layout.tsx`, stratégie `beforeInteractive`) pose
   `data-theme` avant l'hydratation React, ce qui provoque un mismatch
   serveur/client attendu et sans conséquence sur cet attribut précis.
+- Thème par défaut = préférence système (`prefers-color-scheme`) tant
+  qu'aucun choix explicite n'a été fait : le script anti-flash lit
+  `matchMedia('(prefers-color-scheme: dark)')` si `localStorage` ne
+  contient rien, et `ThemeToggle` écoute les changements de cette
+  media query en direct (`change` event) pour suivre le système sans
+  recharger la page. Dès que l'utilisateur clique une fois sur le bouton,
+  `localStorage.theme` est posé et ce choix explicite prend le pas sur le
+  système pour toujours (le listener système se contente alors de ne plus
+  rien faire, voir la condition `if (stored === ...) return` dans
+  `ThemeToggle.tsx`).
 - Deux familles d'accent cohabitent : blush/blush-deep (jours normaux) et
   terracotta/terracotta-deep (jours de règles). Elles suivent le même
   schéma clair (succès = teinte foncée) / sombre (succès = teinte

@@ -2,6 +2,7 @@
 
 import { MAX_DAILY_POINTS, DAILY_TARGET_POINTS, PERIOD_TARGET_POINTS } from "@/lib/habits";
 import { isSuccessDay, mondayIndex, targetForDay, type RangeStats } from "@/lib/history";
+import { nextMilestone, reachedMilestone } from "@/lib/streakMilestones";
 
 type HistorySectionProps = {
   dailyTotals: Map<string, number>;
@@ -39,28 +40,40 @@ export default function HistorySection({
 }: HistorySectionProps) {
   const firstDay = new Date(`${monthDays[0]}T00:00:00`);
   const leadingBlanks = mondayIndex(firstDay);
+  const milestone = reachedMilestone(streak);
+  const upcoming = nextMilestone(streak);
 
   return (
     <div className="space-y-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-ink">
-          {streak > 0 ? (
-            <>
-              🔥 {streak} jour{streak > 1 ? "s" : ""} d&rsquo;affilée
-            </>
-          ) : (
-            <span className="text-ink-soft">Pas encore de série en cours</span>
+        <div>
+          <p className="text-sm font-medium text-ink">
+            {streak > 0 ? (
+              <>
+                🔥 {streak} jour{streak > 1 ? "s" : ""} d&rsquo;affilée
+              </>
+            ) : (
+              <span className="text-ink-soft">Pas encore de série en cours</span>
+            )}
+            {bestStreak > 0 && (
+              <span className="font-normal text-ink-soft">
+                {" "}
+                ·{" "}
+                {streak >= bestStreak
+                  ? "🏆 record personnel !"
+                  : `record perso : ${bestStreak} jour${bestStreak > 1 ? "s" : ""}`}
+              </span>
+            )}
+          </p>
+          {milestone && (
+            <p className="text-xs font-medium text-blush-deep">Palier atteint : {milestone.label}</p>
           )}
-          {bestStreak > 0 && (
-            <span className="font-normal text-ink-soft">
-              {" "}
-              ·{" "}
-              {streak >= bestStreak
-                ? "🏆 record personnel !"
-                : `record perso : ${bestStreak} jour${bestStreak > 1 ? "s" : ""}`}
-            </span>
+          {upcoming && (
+            <p className="text-xs text-ink-soft">
+              Encore {upcoming.remaining} jour{upcoming.remaining > 1 ? "s" : ""} avant {upcoming.milestone.label}
+            </p>
           )}
-        </p>
+        </div>
         <p className="text-sm text-ink-soft">
           {weekStats.successDays}/{weekStats.totalDays} cette semaine ·{" "}
           {monthStats.successDays}/{monthStats.totalDays} ce mois-ci

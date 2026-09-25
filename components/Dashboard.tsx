@@ -15,6 +15,7 @@ import { HABITS, MAX_DAILY_POINTS, PERIOD_TARGET_POINTS, type HabitKey } from "@
 import {
   computeBestStreak,
   computeDailyTotals,
+  computeHabitStats,
   computeStreak,
   countSuccessDaysInRange,
   monthDays,
@@ -28,8 +29,10 @@ import {
   pickDailyPhrase,
 } from "@/lib/phrases";
 import type { HabitLog, PeriodDay } from "@/lib/types";
+import EditPastDay from "./EditPastDay";
 import Gauge from "./Gauge";
 import HabitCard from "./HabitCard";
+import HabitStatsSection from "./HabitStatsSection";
 import HistorySection from "./HistorySection";
 import PointsChart from "./PointsChart";
 import PushReminderToggle from "./PushReminderToggle";
@@ -163,6 +166,14 @@ export default function Dashboard({ userId }: DashboardProps) {
     [dailyTotals, todayAsDate, periodDays]
   );
   const currentMonthDays = useMemo(() => monthDays(todayAsDate), [todayAsDate]);
+  const habitStats = useMemo(
+    () => computeHabitStats(logs, addDays(todayAsDate, -29), todayAsDate),
+    [logs, todayAsDate]
+  );
+  const minEditableDate = useMemo(
+    () => toISODate(addDays(todayAsDate, -(HISTORY_DAYS - 1))),
+    [todayAsDate]
+  );
 
   const phrase = useMemo(() => {
     const pool = isPeriodToday
@@ -188,9 +199,11 @@ export default function Dashboard({ userId }: DashboardProps) {
     prevSuccessRef.current = success;
   }, [success]);
 
-  async function handleToggle(habit: (typeof HABITS)[number]) {
+  // Généralisée sur une date arbitraire pour servir à la fois à la grille du
+  // jour et au panneau "corriger un jour passé" (EditPastDay).
+  async function handleToggleForDate(habit: (typeof HABITS)[number], date: string) {
     setErrorMessage(null);
-    const existing = logs.find((l) => l.habit_key === habit.key && l.log_date === today);
+    const existing = logs.find((l) => l.habit_key === habit.key && l.log_date === date);
     if (existing) {
       const { error } = await supabase.from("habit_logs").delete().eq("id", existing.id);
       if (error) {
@@ -202,7 +215,7 @@ export default function Dashboard({ userId }: DashboardProps) {
     } else {
       const { data, error } = await supabase
         .from("habit_logs")
-        .insert({ user_id: userId, habit_key: habit.key, log_date: today })
+        .insert({ user_id: userId, habit_key: habit.key, log_date: date })
         .select()
         .single();
       if (error) {
@@ -214,9 +227,9 @@ export default function Dashboard({ userId }: DashboardProps) {
     }
   }
 
-  async function handleTogglePeriod() {
+  async function handleTogglePeriodForDate(date: string) {
     setErrorMessage(null);
-    const existing = periodDayRows.find((p) => p.log_date === today);
+    const existing = periodDayRows.find((p) => p.log_date === date);
     if (existing) {
       const { error } = await supabase.from("period_days").delete().eq("id", existing.id);
       if (error) {
@@ -228,7 +241,7 @@ export default function Dashboard({ userId }: DashboardProps) {
     } else {
       const { data, error } = await supabase
         .from("period_days")
-        .insert({ user_id: userId, log_date: today })
+        .insert({ user_id: userId, log_date: date })
         .select()
         .single();
       if (error) {
@@ -239,6 +252,12 @@ export default function Dashboard({ userId }: DashboardProps) {
       }
     }
   }
+
+  const handleToggle = (habit: (typeof HABITS)[number]) => handleToggleForDate(habit, today);
+  const handleTogglePeriod = () => handleTogglePeriodForDate(today);
+  const doneKeysForDate = (date: string) =>
+    new Set(logs.filter((l) => l.log_date === date).map((l) => l.habit_key as HabitKey));
+  const isPeriodForDate = (date: string) => periodDays.has(date);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -342,6 +361,8 @@ export default function Dashboard({ userId }: DashboardProps) {
         monthStats={monthStats}
       />
 
+      <HabitStatsSection stats={habitStats} />
+
       <div className="grid gap-3 sm:grid-cols-2">
         {HABITS.map((habit) => (
           <HabitCard
@@ -352,6 +373,15 @@ export default function Dashboard({ userId }: DashboardProps) {
           />
         ))}
       </div>
+
+      <EditPastDay
+        today={today}
+        minDate={minEditableDate}
+        doneKeysForDate={doneKeysForDate}
+        isPeriodForDate={isPeriodForDate}
+        onToggleHabit={handleToggleForDate}
+        onTogglePeriod={handleTogglePeriodForDate}
+      />
     </div>
   );
 }

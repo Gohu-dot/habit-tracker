@@ -141,17 +141,29 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
   (souris ou tactile) indiquant la date et le score exacts.
 - Un bloc historique affiche la série de jours consécutifs réussis
   ("🔥 N jours d'affilée"), le **record personnel** de la plus longue série
-  jamais réalisée (dans la limite des 90 derniers jours conservés), un
-  bilan de la semaine et du mois en cours, et un calendrier complet du mois
-  en cours (voir `lib/history.ts` pour les calculs et
-  `components/HistorySection.tsx` pour l'affichage). Rien n'est jamais
-  supprimé en base : chaque jour reste dans `habit_logs` avec sa propre
-  date, l'appli ne fait que recharger les 90 derniers jours à chaque visite
-  pour calculer ces statistiques.
-- Thème clair ou sombre, au choix (icône 🌙/☀️ en haut de l'écran de
-  connexion et du tableau de bord). Le choix est mémorisé dans le
-  navigateur (`localStorage`) et réappliqué instantanément à chaque visite,
-  sans flash du thème clair au chargement.
+  jamais réalisée (dans la limite des 90 derniers jours conservés), les
+  **paliers de série** (3, 7, 14, 21, 30, 60, 100, 180, 365 jours — le
+  dernier atteint et le prochain à venir avec le nombre de jours restants),
+  un bilan de la semaine et du mois en cours, et un calendrier complet du
+  mois en cours (voir `lib/history.ts` et `lib/streakMilestones.ts` pour les
+  calculs, `components/HistorySection.tsx` pour l'affichage). Rien n'est
+  jamais supprimé en base : chaque jour reste dans `habit_logs` avec sa
+  propre date, l'appli ne fait que recharger les 90 derniers jours à chaque
+  visite pour calculer ces statistiques.
+- Un bloc "Par habitude" affiche le taux de complétion de chacune des 6
+  habitudes sur les 30 derniers jours glissants, trié de la moins tenue à
+  la plus tenue — pratique pour repérer d'un coup d'œil celle qu'on loupe
+  le plus souvent (`components/HabitStatsSection.tsx`).
+- Un panneau repliable "✏️ Corriger un jour passé" permet de cocher/décocher
+  une habitude (ou la case "règles") sur une date antérieure, dans la limite
+  des 90 derniers jours, pour rattraper un oubli sans attendre le lendemain
+  (`components/EditPastDay.tsx`).
+- Thème clair ou sombre : par défaut, le site suit la préférence système
+  (`prefers-color-scheme`) et s'ajuste automatiquement si elle change (ex.
+  mode sombre programmé le soir sur le téléphone). Cliquer sur l'icône
+  🌙/☀️ (en haut de l'écran de connexion et du tableau de bord) fixe un
+  choix explicite, mémorisé dans le navigateur (`localStorage`) et
+  réappliqué à chaque visite, sans flash du thème clair au chargement.
 - Le site est installable comme une application (PWA) : "Ajouter à l'écran
   d'accueil" sur téléphone ouvre le site en plein écran, sans barre
   d'adresse, avec sa propre icône (voir `app/manifest.ts`, `app/icon.png`,

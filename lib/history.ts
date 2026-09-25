@@ -2,6 +2,8 @@ import { HABITS, DAILY_TARGET_POINTS, PERIOD_TARGET_POINTS, type HabitKey } from
 import type { HabitLog } from "./types";
 import { addDays, startOfMonth, toISODate } from "./date";
 
+export type HabitStat = { key: HabitKey; count: number; totalDays: number; percent: number };
+
 const POINTS_BY_KEY = new Map(HABITS.map((h) => [h.key, h.points]));
 
 // Objectif du jour : abaissé si ce jour est marqué "règles" (period_days).
@@ -112,6 +114,36 @@ export function monthDays(date: Date): string[] {
     cursor = addDays(cursor, 1);
   }
   return days;
+}
+
+// Nombre de fois où chaque habitude a été cochée sur une plage de dates, pour
+// repérer celle qu'on loupe le plus souvent (indépendant de l'objectif
+// global : une habitude à 1 pt et une à 3 pts comptent chacune "un jour").
+export function computeHabitStats(
+  logs: HabitLog[],
+  startDate: Date,
+  endDate: Date
+): HabitStat[] {
+  const start = toISODate(startDate);
+  const end = toISODate(endDate);
+  const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000) + 1;
+
+  const counts = new Map<HabitKey, number>();
+  for (const log of logs) {
+    if (log.log_date < start || log.log_date > end) continue;
+    const key = log.habit_key as HabitKey;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return HABITS.map((h) => {
+    const count = counts.get(h.key) ?? 0;
+    return {
+      key: h.key,
+      count,
+      totalDays,
+      percent: totalDays > 0 ? Math.round((count / totalDays) * 100) : 0,
+    };
+  });
 }
 
 // Index du jour dans une semaine qui commence le lundi (0 = lundi ... 6 = dimanche).
