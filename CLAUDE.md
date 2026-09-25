@@ -114,15 +114,28 @@ le compte est créé manuellement dans Supabase.
   (`AuthGate` + composant de page).
 - `components/RecipesPage.tsx` : charge les recettes de l'utilisateur
   (RLS filtre automatiquement, pas de `.eq("user_id", ...)` explicite —
-  même pattern que `habit_logs`/`period_days`), formulaire d'ajout
-  toujours visible (titre + lien + catégorie + note optionnelle), filtres
-  par catégorie/statut, liste de `RecipeCard`.
+  même pattern que `habit_logs`/`period_days`). Un seul formulaire sert à
+  la fois à l'ajout et à la modification (`editingId: string | null` —
+  `null` = mode ajout) : cliquer "✏️" sur une fiche appelle
+  `handleStartEdit`, qui charge cette recette dans le formulaire (y
+  compris `caption`/`thumbnail_url` déjà connus, pour ne pas les perdre si
+  l'URL n'est pas retouchée) et fait défiler la page en haut ; `Annuler la
+  modification` et un ajout/une modification réussie appellent tous les
+  deux `resetForm`. `handleSubmit` fait un `update` ou un `insert` selon
+  `editingId`. Recherche texte (`searchQuery`, sur titre + note + légende)
+  et filtres catégorie/statut se combinent dans `filteredRecipes`.
+  `handleSurprise` tire une recette au hasard dans `filteredRecipes`
+  (respecte donc recherche/filtres en cours), évite de retomber deux fois
+  de suite sur la même quand il y a le choix, et s'affiche dans un encart
+  séparé (bordure `ring-blush-deep`) au-dessus de la liste — se ferme tout
+  seul si la recette affichée est éditée (`handleStartEdit` vide
+  `surpriseRecipe`) ou supprimée (`handleDelete` la retire si l'id
+  correspond).
 - `components/RecipeCard.tsx` : une fiche = titre cliquable (ouvre le lien
-  TikTok/Instagram dans un nouvel onglet), pastille catégorie, pastille
-  statut cliquable qui fait avancer le cycle (`nextRecipeStatus`), note
-  optionnelle, bouton supprimer. Volontairement pas d'aperçu/miniature de
-  la vidéo (dépendrait d'un service oEmbed tiers fragile) : juste un lien
-  propre.
+  TikTok/Instagram dans un nouvel onglet), boutons modifier (✏️, appelle
+  `onEdit`) et supprimer (✕), pastille catégorie, pastille statut
+  cliquable qui fait avancer le cycle (`nextRecipeStatus`), note
+  optionnelle, miniature en couverture si disponible, légende repliable.
 - Table `recipes` (voir `supabase/schema.sql` /
   `supabase/migrations/005_recipes.sql`) : `title`, `url`, `category`,
   `status` (contrainte `check` en base sur les 3 valeurs), `note`

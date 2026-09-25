@@ -7,6 +7,7 @@ import type { Recipe } from "@/lib/types";
 type RecipeCardProps = {
   recipe: Recipe;
   onCycleStatus: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 };
 
@@ -16,7 +17,7 @@ const STATUS_STYLES: Record<RecipeStatusKey, string> = {
   validee: "bg-blush-deep text-white",
 };
 
-export default function RecipeCard({ recipe, onCycleStatus, onDelete }: RecipeCardProps) {
+export default function RecipeCard({ recipe, onCycleStatus, onEdit, onDelete }: RecipeCardProps) {
   const categoryName =
     RECIPE_CATEGORIES.find((c) => c.key === recipe.category)?.name ?? recipe.category;
   const statusName = RECIPE_STATUSES.find((s) => s.key === recipe.status)?.name ?? recipe.status;
@@ -47,14 +48,24 @@ export default function RecipeCard({ recipe, onCycleStatus, onDelete }: RecipeCa
           >
             {recipe.title}
           </a>
-          <button
-            onClick={onDelete}
-            aria-label="Supprimer cette recette"
-            title="Supprimer"
-            className="shrink-0 text-ink-soft hover:text-danger-text"
-          >
-            ✕
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button
+              onClick={onEdit}
+              aria-label="Modifier cette recette"
+              title="Modifier"
+              className="text-ink-soft hover:text-ink"
+            >
+              ✏️
+            </button>
+            <button
+              onClick={onDelete}
+              aria-label="Supprimer cette recette"
+              title="Supprimer"
+              className="text-ink-soft hover:text-danger-text"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">

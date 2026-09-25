@@ -44,6 +44,10 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
 
   const [categoryFilter, setCategoryFilter] = useState<string>(CATEGORY_FILTER_ALL);
   const [statusFilter, setStatusFilter] = useState<string>(STATUS_FILTER_ALL);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [surpriseRecipe, setSurpriseRecipe] = useState<Recipe | null>(null);
 
   const [sharedBanner, setSharedBanner] = useState(false);
   const searchParams = useSearchParams();
@@ -119,22 +123,74 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
     };
   }, []);
 
-  async function handleAdd(e: React.FormEvent) {
+  // Remet le formulaire à zéro, que ce soit après un ajout/une modification
+  // réussie ou un clic sur "Annuler la modification".
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setUrl("");
+    setCategory(RECIPE_CATEGORIES[0].key);
+    setNote("");
+    setSharedBanner(false);
+    setCaption(null);
+    setThumbnailUrl(null);
+    setCaptionAttempted(false);
+    lastFetchedCaptionUrl.current = null;
+  }
+
+  // Charge une recette existante dans le formulaire d'ajout, qui bascule en
+  // mode édition (voir editingId) plutôt que de dupliquer un second formulaire.
+  function handleStartEdit(recipe: Recipe) {
+    setErrorMessage(null);
+    setSurpriseRecipe(null);
+    setEditingId(recipe.id);
+    setTitle(recipe.title);
+    setUrl(recipe.url);
+    setCategory(recipe.category);
+    setNote(recipe.note ?? "");
+    setCaption(recipe.caption);
+    setThumbnailUrl(recipe.thumbnail_url);
+    setCaptionAttempted(Boolean(recipe.caption || recipe.thumbnail_url));
+    lastFetchedCaptionUrl.current = recipe.url;
+    setSharedBanner(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !url.trim()) return;
     setErrorMessage(null);
     setSaving(true);
+    const payload = {
+      title: title.trim(),
+      url: url.trim(),
+      category,
+      note: note.trim() || null,
+      caption,
+      thumbnail_url: thumbnailUrl,
+    };
+
+    if (editingId) {
+      const { data, error } = await supabase
+        .from("recipes")
+        .update(payload)
+        .eq("id", editingId)
+        .select()
+        .single();
+      setSaving(false);
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible de modifier la recette : " + error.message);
+      } else if (data) {
+        setRecipes((prev) => prev.map((r) => (r.id === editingId ? data : r)));
+        resetForm();
+      }
+      return;
+    }
+
     const { data, error } = await supabase
       .from("recipes")
-      .insert({
-        user_id: userId,
-        title: title.trim(),
-        url: url.trim(),
-        category,
-        note: note.trim() || null,
-        caption,
-        thumbnail_url: thumbnailUrl,
-      })
+      .insert({ user_id: userId, ...payload })
       .select()
       .single();
     setSaving(false);
@@ -143,14 +199,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       setErrorMessage("Impossible d'ajouter la recette : " + error.message);
     } else if (data) {
       setRecipes((prev) => [data, ...prev]);
-      setTitle("");
-      setUrl("");
-      setNote("");
-      setSharedBanner(false);
-      setCaption(null);
-      setThumbnailUrl(null);
-      setCaptionAttempted(false);
-      lastFetchedCaptionUrl.current = null;
+      resetForm();
     }
   }
 
@@ -174,18 +223,35 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       setErrorMessage("Impossible de supprimer la recette : " + error.message);
     } else {
       setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
+      setSurpriseRecipe((prev) => (prev?.id === recipe.id ? null : prev));
     }
   }
 
-  const filteredRecipes = useMemo(
-    () =>
-      recipes.filter(
-        (r) =>
-          (categoryFilter === CATEGORY_FILTER_ALL || r.category === categoryFilter) &&
-          (statusFilter === STATUS_FILTER_ALL || r.status === statusFilter)
-      ),
-    [recipes, categoryFilter, statusFilter]
-  );
+  const filteredRecipes = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return recipes.filter((r) => {
+      const matchesCategory = categoryFilter === CATEGORY_FILTER_ALL || r.category === categoryFilter;
+      const matchesStatus = statusFilter === STATUS_FILTER_ALL || r.status === statusFilter;
+      const matchesQuery =
+        !query ||
+        r.title.toLowerCase().includes(query) ||
+        (r.note ?? "").toLowerCase().includes(query) ||
+        (r.caption ?? "").toLowerCase().includes(query);
+      return matchesCategory && matchesStatus && matchesQuery;
+    });
+  }, [recipes, categoryFilter, statusFilter, searchQuery]);
+
+  // Tire une recette au hasard parmi la liste actuellement filtrée (respecte
+  // donc recherche/catégorie/statut en cours) — évite de retomber deux fois
+  // de suite sur la même quand il y a le choix.
+  function handleSurprise() {
+    if (filteredRecipes.length === 0) return;
+    const candidates =
+      surpriseRecipe && filteredRecipes.length > 1
+        ? filteredRecipes.filter((r) => r.id !== surpriseRecipe.id)
+        : filteredRecipes;
+    setSurpriseRecipe(candidates[Math.floor(Math.random() * candidates.length)]);
+  }
 
   if (loading) {
     return <p className="p-8 text-ink-soft">Chargement...</p>;
@@ -202,10 +268,23 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       )}
 
       <form
-        onSubmit={handleAdd}
+        onSubmit={handleSubmit}
         className="space-y-3 rounded-xl border border-sand bg-ivory p-4 shadow-sm"
       >
-        <p className="text-sm font-medium text-ink">Ajouter une recette</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-ink">
+            {editingId ? "Modifier la recette" : "Ajouter une recette"}
+          </p>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="text-xs text-ink-soft underline hover:text-ink"
+            >
+              Annuler la modification
+            </button>
+          )}
+        </div>
         {sharedBanner && (
           <p className="rounded-lg border border-sand bg-blush/20 px-3 py-2 text-sm text-ink">
             🔗 Lien récupéré depuis le partage — vérifie le titre et la catégorie avant d&rsquo;ajouter.
@@ -325,11 +404,18 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
           disabled={saving}
           className="rounded-md bg-blush-deep px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Ajout..." : "Ajouter"}
+          {saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Ajouter"}
         </button>
       </form>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Rechercher une recette..."
+          className="min-w-0 flex-1 rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink placeholder:text-ink-soft sm:flex-none sm:w-48"
+        />
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
@@ -354,10 +440,50 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={handleSurprise}
+          disabled={filteredRecipes.length === 0}
+          className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50"
+        >
+          🎲 Surprends-moi
+        </button>
         <span className="text-ink-soft">
           {filteredRecipes.length} recette{filteredRecipes.length > 1 ? "s" : ""}
         </span>
       </div>
+
+      {surpriseRecipe && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-blush-deep">🎲 Notre choix pour toi</p>
+            <div className="flex gap-3 text-xs">
+              <button
+                type="button"
+                onClick={handleSurprise}
+                className="text-ink-soft underline hover:text-ink"
+              >
+                Une autre ?
+              </button>
+              <button
+                type="button"
+                onClick={() => setSurpriseRecipe(null)}
+                className="text-ink-soft underline hover:text-ink"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+          <div className="rounded-xl ring-2 ring-blush-deep">
+            <RecipeCard
+              recipe={surpriseRecipe}
+              onCycleStatus={() => handleStatusCycle(surpriseRecipe)}
+              onEdit={() => handleStartEdit(surpriseRecipe)}
+              onDelete={() => handleDelete(surpriseRecipe)}
+            />
+          </div>
+        </div>
+      )}
 
       {filteredRecipes.length === 0 ? (
         <p className="rounded-xl border border-sand bg-ivory p-4 text-sm text-ink-soft shadow-sm">
@@ -372,6 +498,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
               key={recipe.id}
               recipe={recipe}
               onCycleStatus={() => handleStatusCycle(recipe)}
+              onEdit={() => handleStartEdit(recipe)}
               onDelete={() => handleDelete(recipe)}
             />
           ))}

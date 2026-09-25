@@ -187,10 +187,13 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
   de garder les recettes saines repérées sur TikTok/Instagram : titre, lien
   vers la vidéo, catégorie (petit-déj, déjeuner, dîner, encas, dessert,
   boisson) et note libre optionnelle. Chaque fiche a un statut — à tester,
-  testée, validée ⭐ — qui avance d'un clic sur la pastille. Filtres par
-  catégorie et par statut pour retrouver une recette dans une liste qui
-  grossit. Pas d'aperçu vidéo intégré (TikTok/Instagram ne s'y prêtent pas
-  bien) : juste un lien propre qui ouvre la vidéo dans un nouvel onglet.
+  testée, validée ⭐ — qui avance d'un clic sur la pastille, et peut être
+  **modifiée** (bouton ✏️, recharge la fiche dans le formulaire d'ajout) ou
+  supprimée. Une **recherche texte** (titre, note, légende) se combine aux
+  filtres catégorie/statut, et un bouton **🎲 Surprends-moi** tire une
+  recette au hasard parmi celles affichées — pratique pour se décider sans
+  réfléchir. Pas d'aperçu vidéo intégré (TikTok/Instagram ne s'y prêtent
+  pas bien) : juste un lien propre qui ouvre la vidéo dans un nouvel onglet.
 - **Partage direct depuis TikTok/Instagram (Android)** : une fois le site
   installé sur l'écran d'accueil, il apparaît directement dans le menu
   "Partager" d'une vidéo. Le lien atterrit pré-rempli dans le formulaire
