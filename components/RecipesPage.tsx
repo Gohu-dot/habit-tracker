@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
   RECIPE_CATEGORIES,
@@ -19,6 +20,16 @@ type RecipesPageProps = {
 const CATEGORY_FILTER_ALL = "toutes";
 const STATUS_FILTER_ALL = "tous";
 
+// Partager depuis TikTok/Instagram envoie le lien dans "text" (intent Android
+// ACTION_SEND), pas dans "url" : ces apps ne renseignent quasiment jamais ce
+// second champ. On l'extrait donc avec une regex plutôt que de compter dessus.
+function extractSharedUrl(text: string | null, urlParam: string | null): string {
+  if (urlParam) return urlParam;
+  if (!text) return "";
+  const match = text.match(/https?:\/\/\S+/);
+  return match ? match[0] : "";
+}
+
 export default function RecipesPage({ userId }: RecipesPageProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +43,25 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
 
   const [categoryFilter, setCategoryFilter] = useState<string>(CATEGORY_FILTER_ALL);
   const [statusFilter, setStatusFilter] = useState<string>(STATUS_FILTER_ALL);
+
+  const [sharedBanner, setSharedBanner] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Arrivée depuis le menu "Partager" d'Android (voir share_target dans
+  // app/manifest.ts) : pré-remplit le formulaire avec le lien partagé, puis
+  // nettoie l'URL pour qu'un rechargement de la page ne re-déclenche rien.
+  useEffect(() => {
+    const sharedUrl = extractSharedUrl(searchParams.get("shared_text"), searchParams.get("shared_url"));
+    if (!sharedUrl) return;
+    const sharedTitle = searchParams.get("shared_title");
+    queueMicrotask(() => {
+      setUrl(sharedUrl);
+      if (sharedTitle) setTitle(sharedTitle);
+      setSharedBanner(true);
+    });
+    router.replace("/recettes");
+  }, [searchParams, router]);
 
   useEffect(() => {
     let ignore = false;
@@ -82,6 +112,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       setTitle("");
       setUrl("");
       setNote("");
+      setSharedBanner(false);
     }
   }
 
@@ -137,6 +168,11 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
         className="space-y-3 rounded-xl border border-sand bg-ivory p-4 shadow-sm"
       >
         <p className="text-sm font-medium text-ink">Ajouter une recette</p>
+        {sharedBanner && (
+          <p className="rounded-lg border border-sand bg-blush/20 px-3 py-2 text-sm text-ink">
+            🔗 Lien récupéré depuis le partage — vérifie le titre et la catégorie avant d&rsquo;ajouter.
+          </p>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <label className="text-xs text-ink-soft" htmlFor="recipe-title">

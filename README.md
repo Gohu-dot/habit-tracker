@@ -191,6 +191,13 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
   catégorie et par statut pour retrouver une recette dans une liste qui
   grossit. Pas d'aperçu vidéo intégré (TikTok/Instagram ne s'y prêtent pas
   bien) : juste un lien propre qui ouvre la vidéo dans un nouvel onglet.
+- **Partage direct depuis TikTok/Instagram (Android)** : une fois le site
+  installé sur l'écran d'accueil, il apparaît directement dans le menu
+  "Partager" d'une vidéo. Le lien atterrit pré-rempli dans le formulaire
+  d'ajout de recette — il ne reste qu'à vérifier le titre/la catégorie et
+  valider. Fonctionne uniquement sur Android (Chrome) : iOS/Safari ne
+  supporte pas cette fonctionnalité des PWA, donc sur iPhone il faut
+  continuer à copier-coller le lien manuellement.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 

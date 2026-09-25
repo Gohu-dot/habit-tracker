@@ -128,6 +128,34 @@ le compte est créé manuellement dans Supabase.
   `status` (contrainte `check` en base sur les 3 valeurs), `note`
   (nullable). RLS classique (`user_id = auth.uid()`) sur les 4 opérations,
   y compris `update` (nécessaire pour le changement de statut).
+- **Partage direct depuis TikTok/Instagram** (Android uniquement — voir
+  `app/manifest.ts`, champ `share_target` : `action: "/recettes"`,
+  `method: "GET"`, mappe `text`/`url`/`title` du partage vers les query
+  params `shared_text`/`shared_url`/`shared_title`). Une fois l'app
+  installée sur l'écran d'accueil, elle apparaît dans le menu "Partager"
+  d'Android. `RecipesPage.tsx` lit ces query params dans un `useEffect`
+  au montage : `extractSharedUrl` privilégie `shared_url` s'il est rempli,
+  sinon extrait le premier lien `http(s)` trouvé dans `shared_text` par
+  regex — **nécessaire pour TikTok/Instagram**, qui envoient le lien via
+  l'intent Android `ACTION_SEND`/`EXTRA_TEXT` (mappé sur `text`), quasiment
+  jamais sur `url`. Le lien extrait pré-remplit le champ URL du formulaire
+  (+ le titre si `shared_title` est fourni, rare en pratique), une bannière
+  s'affiche, puis `router.replace("/recettes")` nettoie l'URL pour qu'un
+  rechargement de page ne re-déclenche rien. Pas d'ajout automatique en
+  base à la réception : elle valide elle-même après avoir vérifié
+  titre/catégorie, par sécurité et parce que la catégorie ne peut pas être
+  déduite du partage.
+  `useSearchParams()` impose un `<Suspense>` autour du composant qui
+  l'utilise (voir `app/recettes/page.tsx`), sinon Next.js échoue au build.
+  ⚠️ **iOS ne supporte pas `share_target`** (limitation Safari/WebKit,
+  toujours vraie à ce jour) : si le site est un jour installé sur iPhone,
+  le partage direct n'y fonctionnera pas, il faudra continuer à
+  copier-coller le lien manuellement sur cet appareil-là.
+  ⚠️ Après un changement du manifest (comme celui-ci), Android/Chrome ne
+  met pas forcément à jour le WebAPK de l'app déjà installée
+  instantanément : si "Habitudes" n'apparaît pas tout de suite dans le
+  menu Partager, réessayer après avoir rouvert l'app une fois (ou, en
+  dernier recours, la désinstaller/réinstaller depuis l'écran d'accueil).
 
 ## Rappel du soir (notifications push)
 - `public/sw.js` : service worker minimal, écoute juste `push` (affiche la

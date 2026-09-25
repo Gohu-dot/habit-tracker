@@ -17,5 +17,18 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
     ],
+    // Fait apparaître le site dans le menu "Partager" d'Android (ex. depuis
+    // TikTok ou Instagram) une fois l'app installée sur l'écran d'accueil.
+    // GET + query params, pas de fichier à gérer : voir RecipesPage.tsx pour
+    // l'extraction du lien à partir de "shared_text".
+    share_target: {
+      action: "/recettes",
+      method: "GET",
+      params: {
+        title: "shared_title",
+        text: "shared_text",
+        url: "shared_url",
+      },
+    },
   };
 }
