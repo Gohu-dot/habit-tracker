@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
   RECIPE_CATEGORIES,
   RECIPE_STATUSES,
+  isTikTokUrl,
   nextRecipeStatus,
   type RecipeCategoryKey,
 } from "@/lib/recipes";
@@ -48,6 +49,30 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [caption, setCaption] = useState<string | null>(null);
+  const [captionLoading, setCaptionLoading] = useState(false);
+  const [captionAttempted, setCaptionAttempted] = useState(false);
+  const lastFetchedCaptionUrl = useRef<string | null>(null);
+
+  // Légende d'origine de la vidéo, séparée de la note perso pour que celle-ci
+  // reste toujours disponible sans être écrasée (voir caption en base).
+  // TikTok uniquement : Instagram a fermé son oEmbed public.
+  async function fetchCaption(targetUrl: string) {
+    lastFetchedCaptionUrl.current = targetUrl;
+    setCaptionLoading(true);
+    setCaptionAttempted(true);
+    try {
+      const res = await fetch(`/api/tiktok-caption?url=${encodeURIComponent(targetUrl)}`);
+      const data = await res.json();
+      setCaption(typeof data.caption === "string" ? data.caption : null);
+    } catch (err) {
+      console.error(err);
+      setCaption(null);
+    } finally {
+      setCaptionLoading(false);
+    }
+  }
+
   // Arrivée depuis le menu "Partager" d'Android (voir share_target dans
   // app/manifest.ts) : pré-remplit le formulaire avec le lien partagé, puis
   // nettoie l'URL pour qu'un rechargement de la page ne re-déclenche rien.
@@ -59,6 +84,9 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       setUrl(sharedUrl);
       if (sharedTitle) setTitle(sharedTitle);
       setSharedBanner(true);
+      if (isTikTokUrl(sharedUrl)) {
+        fetchCaption(sharedUrl);
+      }
     });
     router.replace("/recettes");
   }, [searchParams, router]);
@@ -100,6 +128,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
         url: url.trim(),
         category,
         note: note.trim() || null,
+        caption,
       })
       .select()
       .single();
@@ -113,6 +142,9 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       setUrl("");
       setNote("");
       setSharedBanner(false);
+      setCaption(null);
+      setCaptionAttempted(false);
+      lastFetchedCaptionUrl.current = null;
     }
   }
 
@@ -197,7 +229,18 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
               type="url"
               required
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                if (e.target.value !== lastFetchedCaptionUrl.current) {
+                  setCaption(null);
+                  setCaptionAttempted(false);
+                }
+              }}
+              onBlur={() => {
+                if (isTikTokUrl(url) && url !== lastFetchedCaptionUrl.current) {
+                  fetchCaption(url);
+                }
+              }}
               placeholder="https://..."
               className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
             />
@@ -233,6 +276,29 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
             />
           </div>
         </div>
+
+        {isTikTokUrl(url) && (captionLoading || captionAttempted) && (
+          <div className="rounded-lg border border-sand bg-cream p-3 text-sm">
+            <p className="mb-1 font-medium text-ink">📋 Légende TikTok récupérée automatiquement</p>
+            {captionLoading ? (
+              <p className="text-ink-soft">Récupération en cours...</p>
+            ) : caption ? (
+              <p className="max-h-32 overflow-y-auto whitespace-pre-wrap text-ink-soft">{caption}</p>
+            ) : (
+              <p className="text-ink-soft">
+                Légende introuvable pour ce lien.{" "}
+                <button
+                  type="button"
+                  onClick={() => fetchCaption(url)}
+                  className="underline hover:text-ink"
+                >
+                  Réessayer
+                </button>
+              </p>
+            )}
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={saving}

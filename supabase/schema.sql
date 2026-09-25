@@ -81,6 +81,10 @@ create table if not exists recipes (
   category text not null,
   status text not null default 'a_tester' check (status in ('a_tester', 'testee', 'validee')),
   note text,
+  -- Légende d'origine de la vidéo (récupérée automatiquement pour TikTok via
+  -- son oEmbed public, voir app/api/tiktok-caption) : séparée de `note` pour
+  -- que la note perso reste toujours disponible, sans être écrasée.
+  caption text,
   created_at timestamptz not null default now()
 );
 

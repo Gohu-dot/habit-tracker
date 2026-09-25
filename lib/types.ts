@@ -31,5 +31,6 @@ export type Recipe = {
   category: RecipeCategoryKey;
   status: RecipeStatusKey;
   note: string | null;
+  caption: string | null;
   created_at: string;
 };

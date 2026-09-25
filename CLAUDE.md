@@ -156,6 +156,38 @@ le compte est créé manuellement dans Supabase.
   instantanément : si "Habitudes" n'apparaît pas tout de suite dans le
   menu Partager, réessayer après avoir rouvert l'app une fois (ou, en
   dernier recours, la désinstaller/réinstaller depuis l'écran d'accueil).
+  Piège vécu : une réinstallation via l'icône seule peut ne pas suffire si
+  Android considère encore l'app comme "installée" (WebAPK toujours présent
+  dans Paramètres > Applications) — dans ce cas Chrome ne repropose même
+  plus "Installer l'application". Il faut désinstaller depuis Paramètres >
+  Applications, effacer les données du site dans Chrome (Paramètres >
+  Paramètres des sites > chercher le site > Effacer et réinitialiser), puis
+  réinstaller.
+
+- **Légende TikTok récupérée automatiquement** (`app/api/tiktok-caption/
+  route.ts`, `lib/recipes.ts` → `isTikTokUrl`) : beaucoup de créateurs
+  écrivent les ingrédients dans la légende de la vidéo. La route interroge
+  l'oEmbed public de TikTok (`https://www.tiktok.com/oembed?url=...`,
+  gratuit, aucune clé) côté serveur (évite tout souci de CORS) et renvoie
+  `{ caption: string | null }` — toujours un 200, jamais d'erreur à gérer
+  côté client, y compris si le lien n'est pas TikTok (Instagram n'a pas
+  d'oEmbed public exploitable sans compte développeur Meta, donc la route
+  renvoie `null` sans même essayer). Stockée dans une colonne `caption`
+  **séparée de `note`** (voir `supabase/migrations/006_recipe_caption.sql`)
+  pour que la note perso reste toujours disponible, jamais écrasée par la
+  légende automatique — affichées côte à côte dans un encart dédié du
+  formulaire (`RecipesPage.tsx`) et dans un `<details>` repliable sur
+  chaque fiche (`RecipeCard.tsx`).
+  Déclenchée automatiquement à deux endroits : (1) juste après un partage
+  Android si le lien partagé est TikTok, (2) à la perte de focus (`onBlur`)
+  du champ lien si elle colle un lien manuellement — `lastFetchedCaptionUrl`
+  (un `useRef`) évite de re-déclencher un appel identique à chaque blur.
+  Testée dans cet environnement seulement avec des URLs non-TikTok et des
+  liens TikTok invalides (le réseau sandbox bloque tiktok.com) : le
+  comportement de repli (toujours `{caption: null}`, jamais d'exception) a
+  été vérifié, mais la récupération réelle d'une légende n'a pu être
+  confirmée qu'en observant le comportement attendu — à surveiller au
+  premier vrai partage en production si jamais la légende ne remonte pas.
 
 ## Rappel du soir (notifications push)
 - `public/sw.js` : service worker minimal, écoute juste `push` (affiche la

@@ -54,6 +54,13 @@ export default function RecipeCard({ recipe, onCycleStatus, onDelete }: RecipeCa
       </div>
 
       {recipe.note && <p className="text-sm text-ink-soft">{recipe.note}</p>}
+
+      {recipe.caption && (
+        <details className="text-xs text-ink-soft">
+          <summary className="cursor-pointer select-none hover:text-ink">Légende TikTok</summary>
+          <p className="mt-1 whitespace-pre-wrap">{recipe.caption}</p>
+        </details>
+      )}
     </div>
   );
 }

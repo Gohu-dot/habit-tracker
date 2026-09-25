@@ -25,3 +25,15 @@ export function nextRecipeStatus(current: RecipeStatusKey): RecipeStatusKey {
   const index = RECIPE_STATUSES.findIndex((s) => s.key === current);
   return RECIPE_STATUSES[(index + 1) % RECIPE_STATUSES.length].key;
 }
+
+// Utilisé côté client (déclencher la récupération de légende) et côté
+// serveur (app/api/tiktok-caption) : seul TikTok a un oEmbed public
+// exploitable sans compte développeur, contrairement à Instagram.
+export function isTikTokUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname === "tiktok.com" || hostname.endsWith(".tiktok.com");
+  } catch {
+    return false;
+  }
+}

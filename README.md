@@ -198,6 +198,14 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
   valider. Fonctionne uniquement sur Android (Chrome) : iOS/Safari ne
   supporte pas cette fonctionnalité des PWA, donc sur iPhone il faut
   continuer à copier-coller le lien manuellement.
+- **Légende TikTok récupérée automatiquement** : pour un lien TikTok
+  (au partage ou collé à la main), le site va chercher tout seul la
+  légende d'origine de la vidéo — beaucoup de créateurs y écrivent
+  justement les ingrédients. Elle s'affiche dans un encart séparé, à
+  la fois pendant l'ajout et sur chaque fiche recette (repliable), pour
+  que ta propre note reste toujours disponible sans jamais être écrasée.
+  Non disponible pour Instagram (pas de service équivalent accessible
+  sans compte développeur Meta) : l'encart n'apparaît alors simplement pas.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 
