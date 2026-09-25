@@ -50,24 +50,28 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
   const router = useRouter();
 
   const [caption, setCaption] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [captionAttempted, setCaptionAttempted] = useState(false);
   const lastFetchedCaptionUrl = useRef<string | null>(null);
 
-  // Légende d'origine de la vidéo, séparée de la note perso pour que celle-ci
-  // reste toujours disponible sans être écrasée (voir caption en base).
-  // TikTok uniquement : Instagram a fermé son oEmbed public.
-  async function fetchCaption(targetUrl: string) {
+  // Légende + miniature d'origine de la vidéo, séparées de la note perso
+  // pour que celle-ci reste toujours disponible sans être écrasée (voir
+  // caption/thumbnail_url en base). TikTok uniquement : Instagram a fermé
+  // son oEmbed public.
+  async function fetchTikTokPreview(targetUrl: string) {
     lastFetchedCaptionUrl.current = targetUrl;
     setCaptionLoading(true);
     setCaptionAttempted(true);
     try {
-      const res = await fetch(`/api/tiktok-caption?url=${encodeURIComponent(targetUrl)}`);
+      const res = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(targetUrl)}`);
       const data = await res.json();
       setCaption(typeof data.caption === "string" ? data.caption : null);
+      setThumbnailUrl(typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : null);
     } catch (err) {
       console.error(err);
       setCaption(null);
+      setThumbnailUrl(null);
     } finally {
       setCaptionLoading(false);
     }
@@ -85,7 +89,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       if (sharedTitle) setTitle(sharedTitle);
       setSharedBanner(true);
       if (isTikTokUrl(sharedUrl)) {
-        fetchCaption(sharedUrl);
+        fetchTikTokPreview(sharedUrl);
       }
     });
     router.replace("/recettes");
@@ -129,6 +133,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
         category,
         note: note.trim() || null,
         caption,
+        thumbnail_url: thumbnailUrl,
       })
       .select()
       .single();
@@ -143,6 +148,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
       setNote("");
       setSharedBanner(false);
       setCaption(null);
+      setThumbnailUrl(null);
       setCaptionAttempted(false);
       lastFetchedCaptionUrl.current = null;
     }
@@ -233,12 +239,13 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
                 setUrl(e.target.value);
                 if (e.target.value !== lastFetchedCaptionUrl.current) {
                   setCaption(null);
+                  setThumbnailUrl(null);
                   setCaptionAttempted(false);
                 }
               }}
               onBlur={() => {
                 if (isTikTokUrl(url) && url !== lastFetchedCaptionUrl.current) {
-                  fetchCaption(url);
+                  fetchTikTokPreview(url);
                 }
               }}
               placeholder="https://..."
@@ -279,17 +286,31 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
 
         {isTikTokUrl(url) && (captionLoading || captionAttempted) && (
           <div className="rounded-lg border border-sand bg-cream p-3 text-sm">
-            <p className="mb-1 font-medium text-ink">📋 Légende TikTok récupérée automatiquement</p>
+            <p className="mb-2 font-medium text-ink">🎬 Aperçu TikTok récupéré automatiquement</p>
             {captionLoading ? (
               <p className="text-ink-soft">Récupération en cours...</p>
-            ) : caption ? (
-              <p className="max-h-32 overflow-y-auto whitespace-pre-wrap text-ink-soft">{caption}</p>
+            ) : caption || thumbnailUrl ? (
+              <div className="flex gap-3">
+                {thumbnailUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- image hébergée sur le CDN de TikTok, non listable dans next/image
+                  <img
+                    src={thumbnailUrl}
+                    alt=""
+                    className="h-20 w-20 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                {caption && (
+                  <p className="max-h-32 min-w-0 flex-1 overflow-y-auto whitespace-pre-wrap text-ink-soft">
+                    {caption}
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="text-ink-soft">
-                Légende introuvable pour ce lien.{" "}
+                Aperçu introuvable pour ce lien.{" "}
                 <button
                   type="button"
-                  onClick={() => fetchCaption(url)}
+                  onClick={() => fetchTikTokPreview(url)}
                   className="underline hover:text-ink"
                 >
                   Réessayer

@@ -164,30 +164,39 @@ le compte est créé manuellement dans Supabase.
   Paramètres des sites > chercher le site > Effacer et réinitialiser), puis
   réinstaller.
 
-- **Légende TikTok récupérée automatiquement** (`app/api/tiktok-caption/
-  route.ts`, `lib/recipes.ts` → `isTikTokUrl`) : beaucoup de créateurs
-  écrivent les ingrédients dans la légende de la vidéo. La route interroge
-  l'oEmbed public de TikTok (`https://www.tiktok.com/oembed?url=...`,
-  gratuit, aucune clé) côté serveur (évite tout souci de CORS) et renvoie
-  `{ caption: string | null }` — toujours un 200, jamais d'erreur à gérer
-  côté client, y compris si le lien n'est pas TikTok (Instagram n'a pas
-  d'oEmbed public exploitable sans compte développeur Meta, donc la route
-  renvoie `null` sans même essayer). Stockée dans une colonne `caption`
-  **séparée de `note`** (voir `supabase/migrations/006_recipe_caption.sql`)
-  pour que la note perso reste toujours disponible, jamais écrasée par la
-  légende automatique — affichées côte à côte dans un encart dédié du
-  formulaire (`RecipesPage.tsx`) et dans un `<details>` repliable sur
-  chaque fiche (`RecipeCard.tsx`).
-  Déclenchée automatiquement à deux endroits : (1) juste après un partage
+- **Légende + miniature TikTok récupérées automatiquement**
+  (`app/api/tiktok-oembed/route.ts`, `lib/recipes.ts` → `isTikTokUrl`) :
+  beaucoup de créateurs écrivent les ingrédients dans la légende de la
+  vidéo, et une miniature permet de reconnaître la recette en un coup
+  d'œil. Un seul appel à l'oEmbed public de TikTok
+  (`https://www.tiktok.com/oembed?url=...`, gratuit, aucune clé) fournit
+  les deux (`title` → légende, `thumbnail_url` → miniature) — fait côté
+  serveur pour éviter tout souci de CORS. La route renvoie toujours un 200
+  avec `{ caption: string | null, thumbnailUrl: string | null }`, jamais
+  d'erreur à gérer côté client, y compris si le lien n'est pas TikTok
+  (Instagram n'a pas d'oEmbed public exploitable sans compte développeur
+  Meta, donc la route renvoie `null` sans même essayer).
+  Stockées dans des colonnes `caption`/`thumbnail_url` **séparées de
+  `note`** (voir `supabase/migrations/006_recipe_caption.sql` et
+  `007_recipe_thumbnail.sql`) pour que la note perso reste toujours
+  disponible, jamais écrasée par les données automatiques — affichées dans
+  un encart dédié du formulaire (`RecipesPage.tsx`, fonction
+  `fetchTikTokPreview`). Sur chaque fiche (`RecipeCard.tsx`), la miniature
+  devient l'image de couverture en haut de la carte (`<img>` natif plutôt
+  que `next/image`, pour ne pas avoir à lister tous les sous-domaines du
+  CDN TikTok dans `next.config` — un `onError` masque l'image si son lien
+  expire un jour) et la légende reste dans un `<details>` repliable en
+  dessous.
+  Déclenchement automatique à deux endroits : (1) juste après un partage
   Android si le lien partagé est TikTok, (2) à la perte de focus (`onBlur`)
   du champ lien si elle colle un lien manuellement — `lastFetchedCaptionUrl`
   (un `useRef`) évite de re-déclencher un appel identique à chaque blur.
   Testée dans cet environnement seulement avec des URLs non-TikTok et des
   liens TikTok invalides (le réseau sandbox bloque tiktok.com) : le
-  comportement de repli (toujours `{caption: null}`, jamais d'exception) a
-  été vérifié, mais la récupération réelle d'une légende n'a pu être
-  confirmée qu'en observant le comportement attendu — à surveiller au
-  premier vrai partage en production si jamais la légende ne remonte pas.
+  comportement de repli (toujours des champs à `null`, jamais d'exception)
+  a été vérifié, mais la récupération réelle d'une légende/miniature n'a pu
+  être confirmée qu'en observant le comportement attendu — à surveiller au
+  premier vrai partage en production si jamais l'aperçu ne remonte pas.
 
 ## Rappel du soir (notifications push)
 - `public/sw.js` : service worker minimal, écoute juste `push` (affiche la

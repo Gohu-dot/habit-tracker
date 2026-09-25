@@ -32,5 +32,6 @@ export type Recipe = {
   status: RecipeStatusKey;
   note: string | null;
   caption: string | null;
+  thumbnail_url: string | null;
   created_at: string;
 };
