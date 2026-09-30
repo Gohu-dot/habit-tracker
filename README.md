@@ -15,9 +15,11 @@ déploiement sur Vercel.
    nouveau projet (région Europe conseillée).
 2. Dans **SQL Editor**, colle le contenu de `supabase/schema.sql` et
    exécute-le. Cela crée les tables `habit_logs`, `period_days`,
-   `push_subscriptions` et `recipes`, avec des règles de sécurité (Row
-   Level Security) qui garantissent que seul le propriétaire des données
-   peut les lire ou les modifier. Le catalogue des habitudes (nom, points)
+   `push_subscriptions`, `recipes`, `rpg_quests` et `rpg_quest_logs`, avec
+   des règles de sécurité (Row Level Security) qui garantissent que seul le
+   propriétaire des données peut les lire ou les modifier — à l'exception
+   de `recipes`, volontairement **partagée entre tous les comptes** (voir
+   section "Fonctionnement" plus bas). Le catalogue des habitudes (nom, points)
    et celui des catégories/statuts de recettes ne sont pas en base : ils
    vivent dans le code, voir `lib/habits.ts` et `lib/recipes.ts`.
    Si le projet existait déjà avant l'ajout d'une fonctionnalité, exécute
@@ -203,7 +205,11 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
 - Toutes les requêtes passent par les policies RLS de Supabase : même en
   cas de fuite de la clé publique (`anon key`, faite pour être exposée côté
   client), personne ne peut lire ou écrire les données d'un autre compte.
-- Un onglet **Recettes** (à côté de "Habitudes" en haut de l'écran) permet
+- Un onglet **Recettes** (à côté de "Habitudes" en haut de l'écran),
+  **partagé entre tous les comptes du site** (contrairement au reste de
+  l'app, qui reste privé à chaque compte) : pratique quand un seul des
+  comptes a un téléphone Android capable d'importer facilement depuis
+  TikTok/Instagram, pour que l'autre voie quand même les recettes. Permet
   de garder les recettes saines repérées sur TikTok/Instagram : titre, lien
   vers la vidéo, catégorie (petit-déj, déjeuner, dîner, encas, dessert,
   boisson) et note libre optionnelle. Chaque fiche a un statut — à tester,

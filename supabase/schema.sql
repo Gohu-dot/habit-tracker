@@ -73,6 +73,14 @@ create policy "push_subscriptions: owner delete" on push_subscriptions
 -- lien à conserver, pas de tentative d'intégrer la vidéo elle-même. La
 -- catégorie et le statut sont des catalogues fixes (voir lib/recipes.ts),
 -- comme le catalogue des habitudes.
+--
+-- Contrairement aux autres tables (habit_logs, rpg_quests...), celle-ci est
+-- PARTAGÉE entre tous les comptes du site plutôt que scopée par
+-- utilisateur : les deux membres du couple doivent voir/gérer les mêmes
+-- recettes (l'un importe depuis Android, l'autre doit pouvoir les
+-- consulter et les modifier). `user_id` reste enregistré à titre
+-- informatif (qui a ajouté la recette) mais n'est plus utilisé pour
+-- restreindre l'accès — voir les policies "any authenticated" ci-dessous.
 create table if not exists recipes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -92,14 +100,14 @@ create table if not exists recipes (
 
 alter table recipes enable row level security;
 
-create policy "recipes: owner read" on recipes
-  for select using (auth.uid() = user_id);
-create policy "recipes: owner insert" on recipes
-  for insert with check (auth.uid() = user_id);
-create policy "recipes: owner update" on recipes
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "recipes: owner delete" on recipes
-  for delete using (auth.uid() = user_id);
+create policy "recipes: any authenticated read" on recipes
+  for select using (auth.uid() is not null);
+create policy "recipes: any authenticated insert" on recipes
+  for insert with check (auth.uid() is not null);
+create policy "recipes: any authenticated update" on recipes
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "recipes: any authenticated delete" on recipes
+  for delete using (auth.uid() is not null);
 
 -- Espace RPG (compte séparé, voir CLAUDE.md) : catalogue de quêtes
 -- personnelles éditable par l'utilisateur (contrairement au catalogue fixe

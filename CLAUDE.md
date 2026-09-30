@@ -152,8 +152,18 @@ connecté (voir `NavTabs.tsx`).
 - Table `recipes` (voir `supabase/schema.sql` /
   `supabase/migrations/005_recipes.sql`) : `title`, `url`, `category`,
   `status` (contrainte `check` en base sur les 3 valeurs), `note`
-  (nullable). RLS classique (`user_id = auth.uid()`) sur les 4 opérations,
-  y compris `update` (nécessaire pour le changement de statut).
+  (nullable). **Table partagée entre tous les comptes**, contrairement à
+  toutes les autres tables de l'app (`habit_logs`, `rpg_quests`...) : les
+  policies RLS vérifient juste `auth.uid() is not null` (n'importe quel
+  compte connecté), pas `user_id = auth.uid()` — voir
+  `supabase/migrations/009_shared_recipes.sql`. `user_id` reste enregistré
+  sur chaque ligne (qui a ajouté la recette) mais ne sert plus à
+  restreindre l'accès. Raison : un seul compte a un téléphone Android
+  capable d'importer facilement via le partage TikTok/Instagram (voir plus
+  bas), mais les deux doivent pouvoir consulter/modifier les recettes.
+  `RecipesPage.tsx` n'a **aucun changement de code** à faire pour ça : sa
+  requête ne filtrait déjà pas par `user_id` (comme `habit_logs`/
+  `period_days`), donc élargir les policies RLS suffit.
 - **Partage direct depuis TikTok/Instagram** (Android uniquement — voir
   `app/manifest.ts`, champ `share_target` : `action: "/recettes"`,
   `method: "GET"`, mappe `text`/`url`/`title` du partage vers les query
