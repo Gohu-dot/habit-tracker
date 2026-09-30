@@ -116,7 +116,7 @@ create table if not exists rpg_quests (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
-  stat_key text not null check (stat_key in ('physique', 'mental', 'discipline', 'creativite', 'social')),
+  stat_key text not null check (stat_key in ('force', 'intelligence', 'volonte', 'agilite', 'rapidite', 'endurance', 'personnalite', 'chance')),
   xp_value integer not null default 10 check (xp_value > 0),
   created_at timestamptz not null default now()
 );
@@ -141,7 +141,7 @@ create table if not exists rpg_quest_logs (
   user_id uuid not null references auth.users (id) on delete cascade,
   quest_id uuid references rpg_quests (id) on delete set null,
   log_date date not null,
-  stat_key text not null check (stat_key in ('physique', 'mental', 'discipline', 'creativite', 'social')),
+  stat_key text not null check (stat_key in ('force', 'intelligence', 'volonte', 'agilite', 'rapidite', 'endurance', 'personnalite', 'chance')),
   xp_value integer not null check (xp_value > 0),
   created_at timestamptz not null default now(),
   unique (user_id, quest_id, log_date)

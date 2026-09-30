@@ -241,11 +241,13 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste
-  du site. 5 capacités fixes (Physique, Mental, Discipline, Créativité,
-  Social) montent de niveau grâce à des **quêtes** que tu définis toi-même
-  (titre, capacité liée, valeur en XP) et coches au jour le jour — chaque
-  palier de niveau est plus coûteux que le précédent, comme dans un vrai
-  RPG. Un niveau de personnage global cumule l'XP des 5 capacités.
+  du site. Les 8 caractéristiques de *The Elder Scrolls IV: Oblivion*
+  (Force, Intelligence, Volonté, Agilité, Rapidité, Endurance,
+  Personnalité, Chance) montent de niveau grâce à des **quêtes** que tu
+  définis toi-même (titre, caractéristique liée, valeur en XP) et coches
+  au jour le jour — chaque palier de niveau est plus coûteux que le
+  précédent, comme dans un vrai RPG. Un niveau de personnage global cumule
+  l'XP des 8 caractéristiques.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 

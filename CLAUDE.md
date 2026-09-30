@@ -236,17 +236,24 @@ connecté (voir `NavTabs.tsx`).
 
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme
-un mini-RPG plutôt qu'un tableau de bord "clean girl" : 5 capacités fixes
+un mini-RPG plutôt qu'un tableau de bord "clean girl" : des capacités fixes
 qui montent de niveau grâce à des quêtes personnelles qu'il définit
 lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
 
-- `lib/rpg.ts` : `RPG_STATS`, catalogue fixe des 5 capacités (Physique,
-  Mental, Discipline, Créativité, Social), même logique que `HABITS` —
-  fixe dans le code. `xpThresholdForLevel(level)` et `computeLevel(xp)`
+- `lib/rpg.ts` : `RPG_STATS`, catalogue fixe des 8 caractéristiques de
+  *The Elder Scrolls IV: Oblivion* (Force, Intelligence, Volonté, Agilité,
+  Rapidité, Endurance, Personnalité, Chance), même logique que `HABITS` —
+  fixe dans le code. Les clés (`force`, `intelligence`, ...) sont
+  dupliquées en base sur chaque ligne de `rpg_quests`/`rpg_quest_logs`
+  (contrainte `check`) : les changer demande une migration qui remappe
+  aussi les données existantes, pas un simple renommage d'affichage — voir
+  `supabase/migrations/010_oblivion_stats.sql` pour un exemple (passage
+  d'un premier jeu générique à 5 capacités vers les 8 d'Oblivion).
+  `xpThresholdForLevel(level)` et `computeLevel(xp)`
   (niveau + XP dans le niveau + XP nécessaire pour le suivant) : palier
   suivant toujours plus coûteux (100, 300, 600, 1000, 1500 XP cumulés...),
   purs calculs sans state, réutilisés à la fois pour chaque capacité et
-  pour le niveau de personnage global (somme des 5).
+  pour le niveau de personnage global (somme de toutes les capacités).
 - Tables `rpg_quests` (catalogue de quêtes, **éditable depuis
   l'interface** — titre, capacité liée, valeur en XP) et `rpg_quest_logs`
   (quêtes cochées, par date). Contrairement à `habit_logs`, `stat_key` et
@@ -259,7 +266,7 @@ lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
 - `components/RpgPage.tsx` : charge tout l'historique des quêtes accomplies
   (pas de fenêtre de 90 jours comme `Dashboard` — l'XP est cumulé depuis le
   début), calcule l'XP total par capacité + le niveau de personnage
-  (somme des 5) côté client. Cocher/décocher une quête aujourd'hui insère/
+  (somme des 8) côté client. Cocher/décocher une quête aujourd'hui insère/
   supprime une ligne dans `rpg_quest_logs`. La gestion des quêtes (ajout/
   modification/suppression) suit le même schéma formulaire unique +
   `editingQuestId` que `RecipesPage.tsx`, dans un panneau repliable
