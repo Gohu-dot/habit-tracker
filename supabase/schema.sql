@@ -100,3 +100,50 @@ create policy "recipes: owner update" on recipes
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "recipes: owner delete" on recipes
   for delete using (auth.uid() = user_id);
+
+-- Espace RPG (compte séparé, voir CLAUDE.md) : catalogue de quêtes
+-- personnelles éditable par l'utilisateur (contrairement au catalogue fixe
+-- des habitudes) et journal des quêtes accomplies chaque jour.
+create table if not exists rpg_quests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  title text not null,
+  stat_key text not null check (stat_key in ('physique', 'mental', 'discipline', 'creativite', 'social')),
+  xp_value integer not null default 10 check (xp_value > 0),
+  created_at timestamptz not null default now()
+);
+
+alter table rpg_quests enable row level security;
+
+create policy "rpg_quests: owner read" on rpg_quests
+  for select using (auth.uid() = user_id);
+create policy "rpg_quests: owner insert" on rpg_quests
+  for insert with check (auth.uid() = user_id);
+create policy "rpg_quests: owner update" on rpg_quests
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "rpg_quests: owner delete" on rpg_quests
+  for delete using (auth.uid() = user_id);
+
+-- stat_key et xp_value sont dupliqués depuis la quête au moment de la coche
+-- (pas de jointure vers rpg_quests) : l'XP déjà gagné reste exact même si
+-- la quête est ensuite modifiée ou supprimée (quest_id passe alors à null,
+-- la ligne elle-même n'est jamais perdue).
+create table if not exists rpg_quest_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  quest_id uuid references rpg_quests (id) on delete set null,
+  log_date date not null,
+  stat_key text not null check (stat_key in ('physique', 'mental', 'discipline', 'creativite', 'social')),
+  xp_value integer not null check (xp_value > 0),
+  created_at timestamptz not null default now(),
+  unique (user_id, quest_id, log_date)
+);
+
+alter table rpg_quest_logs enable row level security;
+
+create policy "rpg_quest_logs: owner read" on rpg_quest_logs
+  for select using (auth.uid() = user_id);
+create policy "rpg_quest_logs: owner insert" on rpg_quest_logs
+  for insert with check (auth.uid() = user_id);
+create policy "rpg_quest_logs: owner delete" on rpg_quest_logs
+  for delete using (auth.uid() = user_id);

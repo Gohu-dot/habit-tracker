@@ -259,7 +259,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-8">
-      <AppHeader />
+      <AppHeader userId={userId} />
 
       {errorMessage && (
         <p className="rounded-lg border border-danger-border bg-danger-surface px-3 py-2 text-sm text-danger-text">

@@ -24,9 +24,12 @@ déploiement sur Vercel.
    plutôt le script de migration correspondant dans `supabase/migrations/`
    (ex. `005_recipes.sql` pour l'onglet Recettes) au lieu de rejouer tout
    `schema.sql`.
-3. Dans **Authentication > Users**, crée manuellement ton unique compte
+3. Dans **Authentication > Users**, crée manuellement ton compte
    (e-mail + mot de passe). Il n'y a pas de page d'inscription publique :
-   c'est volontaire, ce site est fait pour un seul utilisateur.
+   c'est volontaire, les comptes se créent uniquement depuis Supabase.
+   Pour un second compte (ex. l'onglet RPG, voir section 6 plus bas),
+   répète cette étape — un simple e-mail + mot de passe suffit, aucun champ
+   supplémentaire.
 4. Dans **Project Settings > API**, récupère :
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -111,6 +114,23 @@ utile un jour, la piste la plus simple sans passer à Pro est un service
 externe gratuit (ex. [cron-job.org](https://cron-job.org)) qui appelle
 `https://ton-site.vercel.app/api/cron/evening-check?secret=...` aussi
 souvent que voulu, indépendamment des Cron Jobs Vercel.
+
+## 6. Onglet RPG (compte séparé)
+
+L'onglet "RPG" (5 capacités qui montent de niveau via des quêtes
+personnelles) n'apparaît que pour un compte précis, pour ne pas encombrer
+le tableau de bord habitudes/recettes de l'autre utilisateur.
+
+1. Crée un second compte dans Supabase (voir section 1, étape 3).
+2. Récupère son UUID : **Authentication > Users**, clique sur ce compte,
+   copie la valeur **User UID**.
+3. Renseigne-la dans `NEXT_PUBLIC_RPG_USER_ID` (`.env.local` en local,
+   variables d'environnement Vercel en prod), puis redéploie.
+4. Connecte-toi avec ce compte : l'onglet "RPG" apparaît à côté de
+   "Habitudes"/"Recettes". Sans cette variable, personne ne voit l'onglet
+   (mais `/rpg` reste techniquement accessible en tapant l'URL — sans
+   conséquence, RLS empêche de toute façon de voir les données d'un autre
+   compte).
 
 ## Fonctionnement
 
@@ -212,6 +232,14 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
   écrasée. Non disponible pour Instagram (pas de service équivalent
   accessible sans compte développeur Meta) : l'encart et la miniature
   n'apparaissent alors simplement pas.
+- Un onglet **RPG**, visible uniquement sur le compte configuré (voir
+  section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
+  sombre, accents or/violet) indépendante du thème clair/sombre du reste
+  du site. 5 capacités fixes (Physique, Mental, Discipline, Créativité,
+  Social) montent de niveau grâce à des **quêtes** que tu définis toi-même
+  (titre, capacité liée, valeur en XP) et coches au jour le jour — chaque
+  palier de niveau est plus coûteux que le précédent, comme dans un vrai
+  RPG. Un niveau de personnage global cumule l'XP des 5 capacités.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 

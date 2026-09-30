@@ -29,6 +29,18 @@
      étant clairement distincte du rose. */
   --color-terracotta: #e3a988;
   --color-terracotta-deep: #b5652f;
+
+  /* Palette RPG (espace dédié, dark fantasy) : volontairement PAS redéfinie
+     sous [data-theme="dark"] plus bas — cet espace garde toujours la même
+     ambiance sombre, indépendamment du choix clair/sombre du reste du site. */
+  --color-rpg-bg: #120d1f;
+  --color-rpg-panel: #1e1733;
+  --color-rpg-border: #3d2f63;
+  --color-rpg-gold: #f2b705;
+  --color-rpg-purple: #8b5cf6;
+  --color-rpg-text: #f1ecff;
+  --color-rpg-text-soft: #a89bd1;
+  --color-rpg-danger: #ff6b6b;
 }
 
 /* Thème sombre : mêmes rôles de couleur, valeurs inversées. Les classes

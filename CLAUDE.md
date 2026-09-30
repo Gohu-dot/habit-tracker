@@ -2,10 +2,17 @@
 
 # Projet : Habit Tracker (usage personnel)
 
-Site privé, un seul utilisateur, pour suivre un catalogue fixe d'habitudes
-de vie valant chacune des points, avec une jauge quotidienne (objectif
-minimum de points par jour). Pas d'inscription publique, pas de partage :
-le compte est créé manuellement dans Supabase.
+Site privé, initialement un seul utilisateur, pour suivre un catalogue fixe
+d'habitudes de vie valant chacune des points, avec une jauge quotidienne
+(objectif minimum de points par jour). Pas d'inscription publique, pas de
+partage : les comptes sont créés manuellement dans Supabase.
+
+Deux comptes coexistent désormais sur le même site, chacun avec son propre
+onglet dédié en plus des onglets communs (Habitudes/Recettes) : le compte
+d'origine, et un second compte (voir "Onglet RPG" plus bas) dont l'onglet
+n'est visible que sur ce compte-là. RLS s'occupe déjà d'isoler les données
+de chaque compte ; seul l'affichage des onglets diffère selon qui est
+connecté (voir `NavTabs.tsx`).
 
 ## Stack
 - Next.js (App Router) + Tailwind CSS
@@ -65,9 +72,15 @@ le compte est créé manuellement dans Supabase.
   en prop à un composant client (erreur de build sinon).
 - `components/AppHeader.tsx` : header partagé par toutes les pages
   authentifiées (navigation `NavTabs`, `ThemeToggle`, déconnexion) — évite
-  de dupliquer `handleSignOut` dans chaque page.
-- `components/NavTabs.tsx` : liens Habitudes/Recettes, onglet actif détecté
-  via `usePathname()`.
+  de dupliquer `handleSignOut` dans chaque page. Prend `userId` (transmis à
+  `NavTabs`) et `variant?: "default" | "rpg"` — en variante RPG, masque
+  `ThemeToggle` (sans effet sur cet espace, qui ne suit pas le
+  clair/sombre du reste du site) et adapte les couleurs du texte.
+- `components/NavTabs.tsx` : liens Habitudes/Recettes (+ RPG si le compte
+  connecté correspond à `NEXT_PUBLIC_RPG_USER_ID`, voir "Onglet RPG"
+  plus bas), onglet actif détecté via `usePathname()`. Prend `variant?:
+  "default" | "rpg"` pour adapter ses couleurs au fond sombre de l'espace
+  RPG (voir `AppHeader.tsx`).
 - `components/Dashboard.tsx` : charge les logs et les jours de règles des
   90 derniers jours (pas seulement aujourd'hui, pour alimenter
   l'historique), calcule les points du jour + les stats d'historique +
@@ -210,6 +223,65 @@ le compte est créé manuellement dans Supabase.
   a été vérifié, mais la récupération réelle d'une légende/miniature n'a pu
   être confirmée qu'en observant le comportement attendu — à surveiller au
   premier vrai partage en production si jamais l'aperçu ne remonte pas.
+
+## Onglet RPG
+Espace séparé pour un second compte (voir en tête de fichier), pensé comme
+un mini-RPG plutôt qu'un tableau de bord "clean girl" : 5 capacités fixes
+qui montent de niveau grâce à des quêtes personnelles qu'il définit
+lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
+
+- `lib/rpg.ts` : `RPG_STATS`, catalogue fixe des 5 capacités (Physique,
+  Mental, Discipline, Créativité, Social), même logique que `HABITS` —
+  fixe dans le code. `xpThresholdForLevel(level)` et `computeLevel(xp)`
+  (niveau + XP dans le niveau + XP nécessaire pour le suivant) : palier
+  suivant toujours plus coûteux (100, 300, 600, 1000, 1500 XP cumulés...),
+  purs calculs sans state, réutilisés à la fois pour chaque capacité et
+  pour le niveau de personnage global (somme des 5).
+- Tables `rpg_quests` (catalogue de quêtes, **éditable depuis
+  l'interface** — titre, capacité liée, valeur en XP) et `rpg_quest_logs`
+  (quêtes cochées, par date). Contrairement à `habit_logs`, `stat_key` et
+  `xp_value` sont **dupliqués sur chaque ligne de log au moment de la
+  coche**, pas recalculés via une jointure vers `rpg_quests` : l'XP déjà
+  gagné reste exact même si la quête est ensuite modifiée ou supprimée
+  (`quest_id` passe alors à `null` via `on delete set null`, la ligne de
+  log elle-même n'est jamais perdue). Voir `supabase/schema.sql` /
+  `supabase/migrations/008_rpg.sql`. RLS classique (`user_id = auth.uid()`).
+- `components/RpgPage.tsx` : charge tout l'historique des quêtes accomplies
+  (pas de fenêtre de 90 jours comme `Dashboard` — l'XP est cumulé depuis le
+  début), calcule l'XP total par capacité + le niveau de personnage
+  (somme des 5) côté client. Cocher/décocher une quête aujourd'hui insère/
+  supprime une ligne dans `rpg_quest_logs`. La gestion des quêtes (ajout/
+  modification/suppression) suit le même schéma formulaire unique +
+  `editingQuestId` que `RecipesPage.tsx`, dans un panneau repliable
+  (ouvert par défaut si aucune quête n'existe encore, pour guider la
+  première utilisation).
+- `components/RpgStatPanel.tsx` : une capacité = icône/nom, niveau, barre
+  de progression XP → niveau suivant (calculée via `computeLevel`).
+- Palette dédiée dans `app/globals.css` (tokens `--color-rpg-*` : fond
+  très sombre, panneaux violet foncé, accent or pour l'XP, violet clair
+  pour la progression de niveau) — **volontairement pas redéfinie sous
+  `[data-theme="dark"]`** : cet espace garde toujours la même ambiance
+  dark fantasy, indépendamment du choix clair/sombre du reste du site
+  (voir aussi pourquoi `ThemeToggle` est masqué dans `AppHeader`
+  ci-dessus). `RpgPage.tsx` pose son propre fond plein écran
+  (`min-h-screen bg-rpg-bg`) plutôt que de compter sur le fond de
+  `<body>` (`bg-cream`), sinon ce dernier resterait visible autour du
+  contenu.
+- **Visibilité de l'onglet** : `NEXT_PUBLIC_RPG_USER_ID` (env var, UUID du
+  compte Supabase Auth du second utilisateur) contrôle qui voit l'onglet
+  "RPG" dans `NavTabs.tsx` — comparaison simple côté client, pas une vraie
+  protection d'accès (RLS s'en charge déjà pour les données ; rien
+  n'empêche de visiter `/rpg` directement au clavier, ça ne montrerait
+  juste aucune donnée pour un autre compte). Sans cette variable définie,
+  l'onglet n'apparaît pour personne.
+- Simplification assumée pour ce premier jet : pas de bascule automatique
+  du "jour métier" façon `Dashboard` (`scheduleNextRollover`) — `today` est
+  calculé une fois au chargement de la page (`todayISO()`, même décalage
+  7h30 que le reste du site). Un onglet RPG resté ouvert à cheval sur cette
+  heure de reset affichera les quêtes de la veille jusqu'au rechargement de
+  la page. Pas non plus d'historique/calendrier RPG pour l'instant
+  (seulement le total cumulé par capacité) — à ajouter si utile un jour, en
+  s'inspirant de `HistorySection.tsx`.
 
 ## Rappel du soir (notifications push)
 - `public/sw.js` : service worker minimal, écoute juste `push` (affiche la
