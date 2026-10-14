@@ -58,3 +58,21 @@ export type RpgQuestLog = {
   xp_value: number;
   created_at: string;
 };
+
+// Objectif à moyen/long terme débloqué en atteignant `unlock_level` dans
+// `stat_key` (contrairement aux quêtes secondaires, répétables au
+// quotidien). `completed_at` null = pas encore validée. `xp_log_id`
+// pointe vers la ligne de RpgQuestLog créée au moment de la validation
+// (le bonus d'XP) : permet d'annuler proprement si décochée/supprimée par
+// erreur, sans laisser un bonus fantôme dans les totaux.
+export type RpgMainQuest = {
+  id: string;
+  user_id: string;
+  stat_key: RpgStatKey;
+  unlock_level: number;
+  title: string;
+  xp_reward: number;
+  completed_at: string | null;
+  xp_log_id: string | null;
+  created_at: string;
+};

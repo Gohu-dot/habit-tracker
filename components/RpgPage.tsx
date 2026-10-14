@@ -11,7 +11,7 @@ import {
   computeRpgStreak,
   countActiveDaysInRange,
 } from "@/lib/rpgHistory";
-import type { RpgQuest, RpgQuestLog } from "@/lib/types";
+import type { RpgMainQuest, RpgQuest, RpgQuestLog } from "@/lib/types";
 import AppHeader from "./AppHeader";
 import PushReminderToggle from "./PushReminderToggle";
 import RpgHistorySection from "./RpgHistorySection";
@@ -36,13 +36,23 @@ export default function RpgPage({ userId }: RpgPageProps) {
   const [editingQuestId, setEditingQuestId] = useState<string | null>(null);
   const [savingQuest, setSavingQuest] = useState(false);
 
+  const [mainQuests, setMainQuests] = useState<RpgMainQuest[]>([]);
+  const [manageMainOpen, setManageMainOpen] = useState(false);
+  const [mainQuestTitle, setMainQuestTitle] = useState("");
+  const [mainQuestStat, setMainQuestStat] = useState<RpgStatKey>(RPG_STATS[0].key);
+  const [mainQuestUnlockLevel, setMainQuestUnlockLevel] = useState(2);
+  const [mainQuestXpReward, setMainQuestXpReward] = useState(50);
+  const [editingMainQuestId, setEditingMainQuestId] = useState<string | null>(null);
+  const [savingMainQuest, setSavingMainQuest] = useState(false);
+
   useEffect(() => {
     let ignore = false;
 
     async function loadData() {
-      const [questsRes, logsRes] = await Promise.all([
+      const [questsRes, logsRes, mainQuestsRes] = await Promise.all([
         supabase.from("rpg_quests").select("*").order("created_at", { ascending: true }),
         supabase.from("rpg_quest_logs").select("*"),
+        supabase.from("rpg_main_quests").select("*").order("unlock_level", { ascending: true }),
       ]);
       if (ignore) return;
 
@@ -59,6 +69,12 @@ export default function RpgPage({ userId }: RpgPageProps) {
         errors.push("historique (" + logsRes.error.message + ")");
       } else {
         setLogs(logsRes.data ?? []);
+      }
+      if (mainQuestsRes.error) {
+        console.error(mainQuestsRes.error);
+        errors.push("quêtes principales (" + mainQuestsRes.error.message + ")");
+      } else {
+        setMainQuests(mainQuestsRes.data ?? []);
       }
       if (errors.length > 0) {
         setErrorMessage("Impossible de charger : " + errors.join(" · "));
@@ -94,6 +110,21 @@ export default function RpgPage({ userId }: RpgPageProps) {
   const todayXp = useMemo(
     () => logs.filter((l) => l.log_date === today).reduce((sum, l) => sum + l.xp_value, 0),
     [logs, today]
+  );
+
+  // Niveau courant de chaque capacité, nécessaire pour savoir quelles
+  // quêtes principales sont débloquées (unlock_level <= levelByStat).
+  const levelByStat = useMemo(() => {
+    const levels = new Map<RpgStatKey, number>();
+    for (const stat of RPG_STATS) {
+      levels.set(stat.key, computeLevel(xpByStat.get(stat.key) ?? 0).level);
+    }
+    return levels;
+  }, [xpByStat]);
+
+  const statsWithMainQuests = useMemo(
+    () => RPG_STATS.filter((stat) => mainQuests.some((q) => q.stat_key === stat.key)),
+    [mainQuests]
   );
 
   const todayAsDate = useMemo(() => new Date(`${today}T00:00:00`), [today]);
@@ -215,6 +246,148 @@ export default function RpgPage({ userId }: RpgPageProps) {
     }
   }
 
+  function resetMainQuestForm() {
+    setEditingMainQuestId(null);
+    setMainQuestTitle("");
+    setMainQuestStat(RPG_STATS[0].key);
+    setMainQuestUnlockLevel(2);
+    setMainQuestXpReward(50);
+  }
+
+  function handleStartEditMainQuest(quest: RpgMainQuest) {
+    setErrorMessage(null);
+    setEditingMainQuestId(quest.id);
+    setMainQuestTitle(quest.title);
+    setMainQuestStat(quest.stat_key);
+    setMainQuestUnlockLevel(quest.unlock_level);
+    setMainQuestXpReward(quest.xp_reward);
+  }
+
+  async function handleMainQuestSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!mainQuestTitle.trim() || mainQuestUnlockLevel <= 0 || mainQuestXpReward <= 0) return;
+    setErrorMessage(null);
+    setSavingMainQuest(true);
+    const payload = {
+      title: mainQuestTitle.trim(),
+      stat_key: mainQuestStat,
+      unlock_level: mainQuestUnlockLevel,
+      xp_reward: mainQuestXpReward,
+    };
+
+    if (editingMainQuestId) {
+      const { data, error } = await supabase
+        .from("rpg_main_quests")
+        .update(payload)
+        .eq("id", editingMainQuestId)
+        .select()
+        .single();
+      setSavingMainQuest(false);
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible de modifier la quête principale : " + error.message);
+      } else if (data) {
+        setMainQuests((prev) => prev.map((q) => (q.id === editingMainQuestId ? data : q)));
+        resetMainQuestForm();
+      }
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("rpg_main_quests")
+      .insert({ user_id: userId, ...payload })
+      .select()
+      .single();
+    setSavingMainQuest(false);
+    if (error) {
+      console.error(error);
+      setErrorMessage("Impossible de créer la quête principale : " + error.message);
+    } else if (data) {
+      setMainQuests((prev) => [...prev, data]);
+      resetMainQuestForm();
+    }
+  }
+
+  async function handleDeleteMainQuest(quest: RpgMainQuest) {
+    setErrorMessage(null);
+    const { error } = await supabase.from("rpg_main_quests").delete().eq("id", quest.id);
+    if (error) {
+      console.error(error);
+      setErrorMessage("Impossible de supprimer la quête principale : " + error.message);
+    } else {
+      // on delete set null côté rpg_main_quests.xp_log_id, mais la ligne de
+      // rpg_quest_logs créée au moment de la validation reste sinon : on la
+      // retire nous-mêmes pour ne pas laisser un bonus d'XP fantôme.
+      if (quest.xp_log_id) {
+        await supabase.from("rpg_quest_logs").delete().eq("id", quest.xp_log_id);
+        setLogs((prev) => prev.filter((l) => l.id !== quest.xp_log_id));
+      }
+      setMainQuests((prev) => prev.filter((q) => q.id !== quest.id));
+      if (editingMainQuestId === quest.id) resetMainQuestForm();
+    }
+  }
+
+  // Valide (ou annule la validation de) une quête principale. La validation
+  // crédite un bonus d'XP via une ligne de rpg_quest_logs sans quest_id
+  // (quest_id est réservé aux quêtes secondaires) ; l'annulation retire
+  // cette même ligne pour ne pas laisser l'XP gagnée en trop.
+  async function handleToggleMainQuestComplete(quest: RpgMainQuest) {
+    setErrorMessage(null);
+    if (quest.completed_at) {
+      const { error } = await supabase
+        .from("rpg_main_quests")
+        .update({ completed_at: null, xp_log_id: null })
+        .eq("id", quest.id)
+        .select()
+        .single();
+      if (error) {
+        console.error(error);
+        setErrorMessage("Impossible d'annuler cette quête principale : " + error.message);
+        return;
+      }
+      if (quest.xp_log_id) {
+        await supabase.from("rpg_quest_logs").delete().eq("id", quest.xp_log_id);
+        setLogs((prev) => prev.filter((l) => l.id !== quest.xp_log_id));
+      }
+      setMainQuests((prev) =>
+        prev.map((q) => (q.id === quest.id ? { ...q, completed_at: null, xp_log_id: null } : q))
+      );
+      return;
+    }
+
+    const { data: logData, error: logError } = await supabase
+      .from("rpg_quest_logs")
+      .insert({
+        user_id: userId,
+        quest_id: null,
+        log_date: today,
+        stat_key: quest.stat_key,
+        xp_value: quest.xp_reward,
+      })
+      .select()
+      .single();
+    if (logError) {
+      console.error(logError);
+      setErrorMessage("Impossible de valider cette quête principale : " + logError.message);
+      return;
+    }
+    setLogs((prev) => [...prev, logData]);
+
+    const completedAt = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("rpg_main_quests")
+      .update({ completed_at: completedAt, xp_log_id: logData.id })
+      .eq("id", quest.id)
+      .select()
+      .single();
+    if (error) {
+      console.error(error);
+      setErrorMessage("Impossible de valider cette quête principale : " + error.message);
+      return;
+    }
+    setMainQuests((prev) => prev.map((q) => (q.id === quest.id ? data : q)));
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-rpg-bg">
@@ -275,6 +448,75 @@ export default function RpgPage({ userId }: RpgPageProps) {
           weekStats={weekStats}
           monthStats={monthStats}
         />
+
+        {statsWithMainQuests.length > 0 && (
+          <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
+            <p className="mb-3 text-sm font-medium text-rpg-text">🗺️ Quêtes principales</p>
+            <div className="space-y-4">
+              {statsWithMainQuests.map((stat) => {
+                const chain = mainQuests
+                  .filter((q) => q.stat_key === stat.key)
+                  .sort((a, b) => a.unlock_level - b.unlock_level);
+                const currentLevel = levelByStat.get(stat.key) ?? 1;
+                return (
+                  <div key={stat.key}>
+                    <p className="mb-2 text-xs font-medium text-rpg-text-soft">
+                      {stat.icon} {stat.name} — niveau {currentLevel}
+                    </p>
+                    <div className="space-y-1.5">
+                      {chain.map((quest) => {
+                        const unlocked = currentLevel >= quest.unlock_level;
+                        const completed = Boolean(quest.completed_at);
+                        return (
+                          <div
+                            key={quest.id}
+                            className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+                              completed
+                                ? "border-rpg-gold/40 bg-rpg-gold/10"
+                                : unlocked
+                                  ? "border-rpg-border bg-rpg-bg"
+                                  : "border-rpg-border bg-rpg-bg opacity-50"
+                            }`}
+                          >
+                            <span className="min-w-0 flex-1 text-sm text-rpg-text">
+                              {completed ? "✅" : unlocked ? "🎯" : "🔒"} {quest.title}
+                            </span>
+                            {completed ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleMainQuestComplete(quest)}
+                                className="shrink-0 text-xs text-rpg-text-soft underline hover:text-rpg-text"
+                              >
+                                Annuler
+                              </button>
+                            ) : unlocked ? (
+                              <>
+                                <span className="shrink-0 text-xs font-medium text-rpg-gold">
+                                  +{quest.xp_reward} XP
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleMainQuestComplete(quest)}
+                                  className="shrink-0 rounded-md bg-rpg-gold px-2 py-1 text-xs font-medium text-rpg-bg hover:opacity-90"
+                                >
+                                  Marquer comme accompli
+                                </button>
+                              </>
+                            ) : (
+                              <span className="shrink-0 text-xs text-rpg-text-soft">
+                                Niveau {quest.unlock_level} requis
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
           <p className="mb-3 text-sm font-medium text-rpg-text">Quêtes du jour</p>
@@ -409,6 +651,134 @@ export default function RpgPage({ userId }: RpgPageProps) {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
+          <button
+            type="button"
+            onClick={() => setManageMainOpen((o) => !o)}
+            className="flex w-full items-center justify-between text-sm font-medium text-rpg-text"
+          >
+            <span>⚙️ Gérer les quêtes principales</span>
+            <span className="text-rpg-text-soft">{manageMainOpen ? "−" : "+"}</span>
+          </button>
+
+          {manageMainOpen && (
+            <div className="mt-3 space-y-4">
+              <form onSubmit={handleMainQuestSubmit} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-rpg-text-soft">
+                    {editingMainQuestId ? "Modifier la quête principale" : "Nouvelle quête principale"}
+                  </p>
+                  {editingMainQuestId && (
+                    <button
+                      type="button"
+                      onClick={resetMainQuestForm}
+                      className="text-xs text-rpg-text-soft underline hover:text-rpg-text"
+                    >
+                      Annuler la modification
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={mainQuestTitle}
+                  onChange={(e) => setMainQuestTitle(e.target.value)}
+                  placeholder="Ex. Courir 10km"
+                  className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text placeholder:text-rpg-text-soft"
+                />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <select
+                    value={mainQuestStat}
+                    onChange={(e) => setMainQuestStat(e.target.value as RpgStatKey)}
+                    className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                  >
+                    {RPG_STATS.map((s) => (
+                      <option key={s.key} value={s.key}>
+                        {s.icon} {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="space-y-1">
+                    <label className="text-xs text-rpg-text-soft">Niveau requis</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={mainQuestUnlockLevel}
+                      onChange={(e) => setMainQuestUnlockLevel(Number(e.target.value))}
+                      className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-rpg-text-soft">Bonus XP</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={mainQuestXpReward}
+                      onChange={(e) => setMainQuestXpReward(Number(e.target.value))}
+                      className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingMainQuest}
+                  className="rounded-md bg-rpg-gold px-4 py-2 text-sm font-medium text-rpg-bg hover:opacity-90 disabled:opacity-50"
+                >
+                  {savingMainQuest
+                    ? "Enregistrement..."
+                    : editingMainQuestId
+                      ? "Enregistrer"
+                      : "Créer la quête principale"}
+                </button>
+              </form>
+
+              {mainQuests.length > 0 && (
+                <div className="space-y-2 border-t border-rpg-border pt-3">
+                  {mainQuests
+                    .slice()
+                    .sort((a, b) => a.stat_key.localeCompare(b.stat_key) || a.unlock_level - b.unlock_level)
+                    .map((quest) => {
+                      const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
+                      return (
+                        <div
+                          key={quest.id}
+                          className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
+                        >
+                          <span className="min-w-0 flex-1 text-rpg-text">
+                            {stat?.icon} {quest.title}
+                          </span>
+                          <span className="shrink-0 text-xs text-rpg-text-soft">
+                            Nv. {quest.unlock_level} · +{quest.xp_reward} XP
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditMainQuest(quest)}
+                            aria-label="Modifier cette quête principale"
+                            title="Modifier"
+                            className="shrink-0 text-rpg-text-soft hover:text-rpg-text"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMainQuest(quest)}
+                            aria-label="Supprimer cette quête principale"
+                            title="Supprimer"
+                            className="shrink-0 text-rpg-text-soft hover:text-rpg-danger"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

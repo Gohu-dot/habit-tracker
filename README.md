@@ -246,17 +246,23 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   sombre, accents or/violet) indépendante du thème clair/sombre du reste
   du site. Les 8 caractéristiques de *The Elder Scrolls IV: Oblivion*
   (Force, Intelligence, Volonté, Agilité, Rapidité, Endurance,
-  Personnalité, Chance) montent de niveau grâce à des **quêtes** que tu
-  définis toi-même (titre, caractéristique liée, valeur en XP) et coches
-  au jour le jour — chaque palier de niveau est plus coûteux que le
-  précédent, comme dans un vrai RPG. Un niveau de personnage global cumule
-  l'XP des 8 caractéristiques. Un graphique de progression XP, une série
-  de jours actifs consécutifs (avec record personnel et paliers) et un
-  calendrier du mois complètent l'onglet, en miroir de l'historique côté
-  Habitudes — un jour compte comme "actif" dès qu'une quête au moins y a
-  été accomplie, sans objectif quotidien fixe. Le rappel du soir (bouton
-  "🔔 Activer le rappel du soir (19h)", même mécanisme que côté Habitudes)
-  prévient si aucune quête n'a encore été accomplie dans la journée.
+  Personnalité, Chance) montent de niveau grâce à des **quêtes
+  secondaires** que tu définis toi-même (titre, caractéristique liée,
+  valeur en XP) et coches au jour le jour — chaque palier de niveau est
+  plus coûteux que le précédent, comme dans un vrai RPG. Un niveau de
+  personnage global cumule l'XP des 8 caractéristiques. Un graphique de
+  progression XP, une série de jours actifs consécutifs (avec record
+  personnel et paliers) et un calendrier du mois complètent l'onglet, en
+  miroir de l'historique côté Habitudes — un jour compte comme "actif" dès
+  qu'une quête au moins y a été accomplie, sans objectif quotidien fixe.
+  Des **quêtes principales** (objectifs à moyen/long terme, ex. "Courir
+  10km") se débloquent progressivement en montant de niveau dans la
+  caractéristique concernée — chaque chaîne affiche ce qui est 🔒
+  verrouillé (avec le niveau requis), 🎯 débloqué et à valider, ou ✅ déjà
+  accompli ; les valider rapporte un bonus d'XP en plus de l'objectif
+  symbolique atteint. Le rappel du soir (bouton "🔔 Activer le rappel du
+  soir (19h)", même mécanisme que côté Habitudes) prévient si aucune
+  quête n'a encore été accomplie dans la journée.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 

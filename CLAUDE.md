@@ -266,12 +266,35 @@ lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
 - `components/RpgPage.tsx` : charge tout l'historique des quêtes accomplies
   (pas de fenêtre de 90 jours comme `Dashboard` — l'XP est cumulé depuis le
   début), calcule l'XP total par capacité + le niveau de personnage
-  (somme des 8) côté client. Cocher/décocher une quête aujourd'hui insère/
-  supprime une ligne dans `rpg_quest_logs`. La gestion des quêtes (ajout/
-  modification/suppression) suit le même schéma formulaire unique +
-  `editingQuestId` que `RecipesPage.tsx`, dans un panneau repliable
-  (ouvert par défaut si aucune quête n'existe encore, pour guider la
-  première utilisation).
+  (somme des 8) côté client. Cocher/décocher une quête secondaire
+  aujourd'hui insère/supprime une ligne dans `rpg_quest_logs`. La gestion
+  des quêtes secondaires (ajout/modification/suppression) suit le même
+  schéma formulaire unique + `editingQuestId` que `RecipesPage.tsx`, dans
+  un panneau repliable (ouvert par défaut si aucune quête n'existe encore,
+  pour guider la première utilisation).
+- **Quêtes principales** (table `rpg_main_quests`, voir
+  `supabase/migrations/011_rpg_main_quests.sql`) : objectifs à moyen/long
+  terme débloqués en atteignant un niveau donné dans une capacité (ex.
+  niveau 5 en Endurance → "Courir 10km"), par opposition aux quêtes
+  secondaires qui sont des tâches répétables au quotidien. Éditables
+  depuis l'interface (titre, capacité, `unlock_level`, `xp_reward`),
+  panneau de gestion séparé (`manageMainOpen`/`handleMainQuestSubmit`,
+  même schéma que les quêtes secondaires). `levelByStat` (niveau courant
+  de chaque capacité, calculé via `computeLevel`) détermine quelles
+  quêtes sont 🔒 verrouillées, 🎯 débloquées ou ✅ accomplies — l'affichage
+  (`statsWithMainQuests`) ne montre que les capacités où au moins une
+  quête principale existe, triées par `unlock_level` croissant dans
+  chaque chaîne.
+  **Validation = bonus d'XP** : `handleToggleMainQuestComplete` insère une
+  ligne dans `rpg_quest_logs` avec `quest_id: null` (réservé aux quêtes
+  secondaires) et `xp_value: xp_reward`, puis pose `completed_at` et
+  `xp_log_id` (référence vers cette ligne) sur la quête principale — la
+  jauge, le graphique et le calendrier reflètent donc automatiquement le
+  bonus sans code dédié, puisqu'ils ne font que sommer `rpg_quest_logs`.
+  Annuler (ou supprimer) une quête principale validée retire la même
+  ligne pour ne laisser aucun bonus fantôme dans les totaux —
+  `on delete set null` sur `xp_log_id` gère le cas où la ligne de log
+  aurait déjà disparu autrement.
 - `components/RpgStatPanel.tsx` : une capacité = icône/nom, niveau, barre
   de progression XP → niveau suivant (calculée via `computeLevel`).
 - Palette dédiée dans `app/globals.css` (tokens `--color-rpg-*` : fond
