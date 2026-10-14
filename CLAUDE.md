@@ -296,9 +296,35 @@ lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
   calculé une fois au chargement de la page (`todayISO()`, même décalage
   7h30 que le reste du site). Un onglet RPG resté ouvert à cheval sur cette
   heure de reset affichera les quêtes de la veille jusqu'au rechargement de
-  la page. Pas non plus d'historique/calendrier RPG pour l'instant
-  (seulement le total cumulé par capacité) — à ajouter si utile un jour, en
-  s'inspirant de `HistorySection.tsx`.
+  la page.
+- **Historique RPG** (`lib/rpgHistory.ts`, `components/RpgXpChart.tsx`,
+  `components/RpgHistorySection.tsx`) : même principe que côté habitudes,
+  mais sans objectif quotidien fixe — un jour est "actif" dès qu'au moins
+  une quête y a été accomplie (`computeDailyXp` + `isActiveDay`), pas de
+  seuil de points à comparer. `computeRpgStreak`/`computeRpgBestStreak`/
+  `countActiveDaysInRange` sont les équivalents RPG de
+  `computeStreak`/`computeBestStreak`/`countSuccessDaysInRange` dans
+  `lib/history.ts`, réécrits plutôt que généralisés (la fonction habitudes
+  dépend de `targetForDay`/`periodDays`, propres à ce domaine-là) — en
+  revanche `monthDays`/`mondayIndex` (lib/history.ts) et les paliers de
+  série (`lib/streakMilestones.ts`) sont de purs utilitaires génériques,
+  réutilisés tels quels sans dupliquer quoi que ce soit.
+  `computeRpgBestStreak` tourne sur toute la plage disponible (du log le
+  plus ancien à aujourd'hui), pas une fenêtre de 90 jours comme côté
+  habitudes — `RpgPage.tsx` ne charge déjà aucune limite de date sur
+  `rpg_quest_logs`. `RpgXpChart.tsx` est un `PointsChart.tsx` simplifié
+  (pas de ligne de seuil, l'axe vertical s'ajuste au meilleur jour du mois
+  plutôt qu'à un maximum fixe).
+- **Rappel du soir** : `PushReminderToggle` (voir plus bas) est aussi rendu
+  dans `RpgPage.tsx` (`variant="rpg"` pour l'habillage sombre) — même
+  mécanisme d'abonnement que côté habitudes (`push_subscriptions`), pas de
+  nouvelle table. La route `/api/cron/evening-check` reste **unique**
+  (pas de second Cron Job Vercel, pour rester sous la limite du plan
+  Hobby) : elle branche sa logique par abonnement selon que
+  `sub.user_id === NEXT_PUBLIC_RPG_USER_ID` — compte RPG : notifie si
+  aucune ligne dans `rpg_quest_logs` pour aujourd'hui ; sinon, logique
+  habitudes/points inchangée. `sendReminder` factorise l'envoi + le
+  nettoyage des abonnements expirés (404/410), commun aux deux branches.
 
 ## Rappel du soir (notifications push)
 - `public/sw.js` : service worker minimal, écoute juste `push` (affiche la
@@ -325,6 +351,10 @@ lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
   (`lib/habits.ts`, objectif variable selon `period_days`), envoie une
   notification via `web-push` si l'objectif n'est pas atteint, et supprime
   les abonnements expirés/révoqués (erreurs 404/410 du service de push).
+  Branche aussi vers une vérification RPG (quête accomplie aujourd'hui ou
+  non) pour l'abonné dont `user_id` correspond à `NEXT_PUBLIC_RPG_USER_ID`
+  — voir la section "Onglet RPG" plus haut pour le détail, toujours une
+  seule route/un seul Cron Job pour les deux comptes.
 - ⚠️ **Piège vécu** : un Cron Job qui tourne plus d'une fois/jour (ex.
   `0 * * * *`) fait **échouer le déploiement Vercel** sur le plan gratuit
   (Hobby limite à une exécution/jour — erreur *"Hobby accounts are limited

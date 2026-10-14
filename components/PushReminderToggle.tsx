@@ -12,11 +12,15 @@ import {
 
 type PushReminderToggleProps = {
   userId: string;
+  // "rpg" adapte les couleurs au fond sombre de cet espace, même logique
+  // que AppHeader/NavTabs.
+  variant?: "default" | "rpg";
 };
 
 type Status = "checking" | "unsupported" | "off" | "on";
 
-export default function PushReminderToggle({ userId }: PushReminderToggleProps) {
+export default function PushReminderToggle({ userId, variant = "default" }: PushReminderToggleProps) {
+  const isRpg = variant === "rpg";
   const [status, setStatus] = useState<Status>("checking");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,33 +83,31 @@ export default function PushReminderToggle({ userId }: PushReminderToggleProps) 
 
   if (status === "unsupported") {
     return (
-      <p className="text-xs text-ink-soft">
+      <p className={`text-xs ${isRpg ? "text-rpg-text-soft" : "text-ink-soft"}`}>
         Les rappels ne sont pas disponibles sur ce navigateur. Sur iPhone, il faut d&rsquo;abord
         installer le site sur l&rsquo;écran d&rsquo;accueil (Safari uniquement).
       </p>
     );
   }
 
+  const buttonClass = isRpg
+    ? "rounded-md border border-rpg-border bg-rpg-panel px-3 py-1.5 text-rpg-text-soft hover:text-rpg-text disabled:opacity-50"
+    : "rounded-md border border-sand bg-ivory px-3 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50";
+
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {status === "off" ? (
-        <button
-          onClick={handleEnable}
-          disabled={busy}
-          className="rounded-md border border-sand bg-ivory px-3 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50"
-        >
+        <button onClick={handleEnable} disabled={busy} className={buttonClass}>
           🔔 Activer le rappel du soir (19h)
         </button>
       ) : (
-        <button
-          onClick={handleDisable}
-          disabled={busy}
-          className="rounded-md border border-sand bg-ivory px-3 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50"
-        >
+        <button onClick={handleDisable} disabled={busy} className={buttonClass}>
           🔕 Désactiver le rappel du soir
         </button>
       )}
-      {error && <span className="text-xs text-danger-text">{error}</span>}
+      {error && (
+        <span className={`text-xs ${isRpg ? "text-rpg-danger" : "text-danger-text"}`}>{error}</span>
+      )}
     </div>
   );
 }

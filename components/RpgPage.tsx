@@ -2,11 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { todayISO } from "@/lib/date";
+import { startOfMonth, startOfWeek, todayISO } from "@/lib/date";
+import { monthDays } from "@/lib/history";
 import { RPG_STATS, computeLevel, type RpgStatKey } from "@/lib/rpg";
+import {
+  computeDailyXp,
+  computeRpgBestStreak,
+  computeRpgStreak,
+  countActiveDaysInRange,
+} from "@/lib/rpgHistory";
 import type { RpgQuest, RpgQuestLog } from "@/lib/types";
 import AppHeader from "./AppHeader";
+import PushReminderToggle from "./PushReminderToggle";
+import RpgHistorySection from "./RpgHistorySection";
 import RpgStatPanel from "./RpgStatPanel";
+import RpgXpChart from "./RpgXpChart";
 
 type RpgPageProps = {
   userId: string;
@@ -84,6 +94,26 @@ export default function RpgPage({ userId }: RpgPageProps) {
   const todayXp = useMemo(
     () => logs.filter((l) => l.log_date === today).reduce((sum, l) => sum + l.xp_value, 0),
     [logs, today]
+  );
+
+  const todayAsDate = useMemo(() => new Date(`${today}T00:00:00`), [today]);
+  const dailyXp = useMemo(() => computeDailyXp(logs), [logs]);
+  const currentMonthDays = useMemo(() => monthDays(todayAsDate), [todayAsDate]);
+  const streak = useMemo(() => computeRpgStreak(dailyXp, today), [dailyXp, today]);
+  const bestStreak = useMemo(() => {
+    const earliestLogDate = logs.reduce(
+      (min, l) => (l.log_date < min ? l.log_date : min),
+      today
+    );
+    return computeRpgBestStreak(dailyXp, new Date(`${earliestLogDate}T00:00:00`), todayAsDate);
+  }, [dailyXp, logs, today, todayAsDate]);
+  const weekStats = useMemo(
+    () => countActiveDaysInRange(dailyXp, startOfWeek(todayAsDate), todayAsDate),
+    [dailyXp, todayAsDate]
+  );
+  const monthStats = useMemo(
+    () => countActiveDaysInRange(dailyXp, startOfMonth(todayAsDate), todayAsDate),
+    [dailyXp, todayAsDate]
   );
 
   async function handleToggleQuestToday(quest: RpgQuest) {
@@ -204,6 +234,8 @@ export default function RpgPage({ userId }: RpgPageProps) {
           </p>
         )}
 
+        <PushReminderToggle userId={userId} variant="rpg" />
+
         <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
           <div className="flex items-center justify-between">
             <p className="text-lg font-semibold text-rpg-text">🏆 Niveau {characterLevel.level}</p>
@@ -231,6 +263,18 @@ export default function RpgPage({ userId }: RpgPageProps) {
             <RpgStatPanel key={stat.key} stat={stat} xp={xpByStat.get(stat.key) ?? 0} />
           ))}
         </div>
+
+        <RpgXpChart dailyXp={dailyXp} monthDays={currentMonthDays} today={today} />
+
+        <RpgHistorySection
+          dailyXp={dailyXp}
+          monthDays={currentMonthDays}
+          today={today}
+          streak={streak}
+          bestStreak={bestStreak}
+          weekStats={weekStats}
+          monthStats={monthStats}
+        />
 
         <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
           <p className="mb-3 text-sm font-medium text-rpg-text">Quêtes du jour</p>

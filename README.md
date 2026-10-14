@@ -72,7 +72,9 @@ le compte créé dans Supabase.
 
 Une tâche planifiée Vercel ("Cron Job", voir `vercel.json`) se déclenche
 **une fois par jour à 19h (heure de Paris)** et envoie une notification si
-l'objectif du jour n'est pas encore atteint. Heure fixe, pas réglable
+l'objectif du jour n'est pas encore atteint (ou, pour le compte RPG,
+aucune quête accomplie) — la même tâche couvre les deux comptes, pas de
+second Cron Job. Heure fixe, pas réglable
 depuis le site — le plan gratuit Vercel (Hobby) limite les Cron Jobs à une
 exécution par jour, donc une tâche qui vérifierait plusieurs heures
 possibles échouerait au déploiement (vu en pratique : voir l'historique de
@@ -99,7 +101,8 @@ c'est resté volontairement simple).
 4. Renseigne ces 4 variables dans Vercel (Settings > Environment
    Variables), puis redéploie.
 5. Une fois le site installé sur l'écran d'accueil (voir plus bas), clique
-   **"🔔 Activer le rappel du soir"** sur le tableau de bord.
+   **"🔔 Activer le rappel du soir"** sur le tableau de bord (ou sur
+   l'onglet RPG si c'est ce compte-là : le bouton y est aussi présent).
 
 ⚠️ La tâche est programmée en heure UTC fixe (`0 17 * * *` dans
 `vercel.json`, soit 19h en heure d'été/CEST). Comme la France change
@@ -119,7 +122,7 @@ souvent que voulu, indépendamment des Cron Jobs Vercel.
 
 ## 6. Onglet RPG (compte séparé)
 
-L'onglet "RPG" (5 capacités qui montent de niveau via des quêtes
+L'onglet "RPG" (8 caractéristiques qui montent de niveau via des quêtes
 personnelles) n'apparaît que pour un compte précis, pour ne pas encombrer
 le tableau de bord habitudes/recettes de l'autre utilisateur.
 
@@ -247,7 +250,13 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   définis toi-même (titre, caractéristique liée, valeur en XP) et coches
   au jour le jour — chaque palier de niveau est plus coûteux que le
   précédent, comme dans un vrai RPG. Un niveau de personnage global cumule
-  l'XP des 8 caractéristiques.
+  l'XP des 8 caractéristiques. Un graphique de progression XP, une série
+  de jours actifs consécutifs (avec record personnel et paliers) et un
+  calendrier du mois complètent l'onglet, en miroir de l'historique côté
+  Habitudes — un jour compte comme "actif" dès qu'une quête au moins y a
+  été accomplie, sans objectif quotidien fixe. Le rappel du soir (bouton
+  "🔔 Activer le rappel du soir (19h)", même mécanisme que côté Habitudes)
+  prévient si aucune quête n'a encore été accomplie dans la journée.
 
 ## Modifier le catalogue d'habitudes ou l'objectif
 
