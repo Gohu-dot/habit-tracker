@@ -521,6 +521,37 @@ consolidation technique :
   `[data-theme="dark"]`, l'espace RPG reste insensible au thème
   clair/sombre du reste du site.
 
+### Rapprochement visuel d'Oblivion (écran de caractéristiques)
+Trois leviers supplémentaires, demandés explicitement pour coller à
+l'esthétique de l'écran de stats d'Oblivion plutôt qu'un style RPG
+générique :
+- **`RpgStatIcon.tsx`** : remplace les emoji du catalogue (`stat.icon`
+  dans `lib/rpg.ts`, toujours utilisés tels quels dans les `<select>` —
+  une balise `<option>` ne peut pas contenir de SVG) par des glyphes SVG
+  dessinés à la main en traits (`stroke="currentColor"`, pas de
+  remplissage) façon sceau gravé : épée (Force), livre ouvert
+  (Intelligence), œil (Volonté), plume (Agilité), éclair (Rapidité),
+  bouclier (Endurance), masque (Personnalité), fer à cheval (Chance).
+  Utilisé dans `RpgStatPanel.tsx` (badge circulaire) et partout où
+  `RpgPage.tsx` affichait `{stat.icon}` à côté d'un titre de quête.
+- **`levelTitle()`** (`lib/rpg.ts`) : rang affiché à côté du niveau
+  (Novice/Apprenti/Vétéran/Expert/Maître, paliers à 1/3/5/8/11) — pure
+  décoration pour la fiche de personnage, sans incidence sur le
+  déblocage des quêtes principales (qui reste basé sur le niveau d'une
+  capacité précise).
+- **Bandeau "fiche de personnage"** (`RpgPage.tsx`, panneau de niveau) :
+  titre `{levelTitle} — Niveau {X}` en `font-rpg-display`, `.rpg-rule`
+  en séparateur, puis une ligne de stats (XP total · séparateur vertical
+  · XP du jour) avant la jauge de progression — mise en page proche d'un
+  écran de personnage plutôt qu'une simple carte avec une barre.
+- **Police de texte courant** : `EB_Garamond` (Google Font,
+  `app/layout.tsx` → `--font-rpg-garamond`, exposée sous
+  `--font-rpg-serif` dans `@theme inline`), posée une seule fois en
+  `font-family` sur `.rpg-backdrop` (`globals.css`) pour que tout le
+  texte de l'espace RPG en hérite par défaut — les titres explicites
+  (`font-rpg-display`, Cinzel) le redéfinissent localement. Jamais
+  utilisée hors de l'espace RPG, même logique que Cinzel.
+
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies
   RLS (`user_id = auth.uid()`) définies dans `supabase/schema.sql`.

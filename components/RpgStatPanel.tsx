@@ -1,6 +1,7 @@
 "use client";
 
 import { computeLevel, type RpgStat } from "@/lib/rpg";
+import RpgStatIcon from "./RpgStatIcon";
 import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
 
@@ -20,10 +21,10 @@ export default function RpgStatPanel({ stat, xp }: RpgStatPanelProps) {
     <Card variant="rpg" className="p-4">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-2 text-sm font-medium text-rpg-text">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-rpg-gold-dim/60 bg-rpg-bg text-base">
-            {stat.icon}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-rpg-gold-dim/60 bg-rpg-bg text-rpg-gold-dim">
+            <RpgStatIcon statKey={stat.key} className="h-5 w-5" />
           </span>
-          {stat.name}
+          <span className="font-rpg-display tracking-wide">{stat.name}</span>
         </span>
         <Badge variant="rpg">Nv. {level}</Badge>
       </div>

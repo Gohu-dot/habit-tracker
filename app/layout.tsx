@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Geist, Geist_Mono } from "next/font/google";
+import { Cinzel, EB_Garamond, Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -22,6 +22,16 @@ const cinzel = Cinzel({
   weight: ["600", "700"],
 });
 
+// Police de texte courant de l'espace RPG (labels, descriptions...) : un
+// serif plus "manuscrit ancien" que Geist, en complément de Cinzel qui
+// reste réservé aux grands titres. Même logique : jamais utilisée hors de
+// l'espace RPG.
+const ebGaramond = EB_Garamond({
+  variable: "--font-rpg-garamond",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: "Habit Tracker",
   description: "Suivi personnel d'habitudes de vie",
@@ -41,7 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${ebGaramond.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-cream text-ink">

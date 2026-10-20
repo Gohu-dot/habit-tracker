@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { startOfMonth, startOfWeek, todayISO } from "@/lib/date";
 import { monthDays } from "@/lib/history";
-import { RPG_STATS, computeLevel, type RpgStatKey } from "@/lib/rpg";
+import { RPG_STATS, computeLevel, levelTitle, type RpgStatKey } from "@/lib/rpg";
 import {
   computeDailyXp,
   computeRpgBestStreak,
@@ -16,6 +16,7 @@ import AppHeader from "./AppHeader";
 import PushReminderToggle from "./PushReminderToggle";
 import RpgHistorySection from "./RpgHistorySection";
 import RpgSectionHeading from "./RpgSectionHeading";
+import RpgStatIcon from "./RpgStatIcon";
 import RpgStatPanel from "./RpgStatPanel";
 import RpgXpChart from "./RpgXpChart";
 import { Badge } from "./ui/badge";
@@ -414,11 +415,19 @@ export default function RpgPage({ userId }: RpgPageProps) {
         <PushReminderToggle userId={userId} variant="rpg" />
 
         <Card variant="rpg" className="p-5">
-          <div className="flex items-center justify-between">
-            <p className="font-rpg-display text-xl font-semibold tracking-wide text-rpg-text">
-              🏆 Niveau {characterLevel.level}
-            </p>
-            <Badge variant="rpg">+{todayXp} XP aujourd&rsquo;hui</Badge>
+          <p className="font-rpg-display text-2xl font-semibold tracking-wide text-rpg-text">
+            {levelTitle(characterLevel.level)}{" "}
+            <span className="text-rpg-gold">— Niveau {characterLevel.level}</span>
+          </p>
+          <div className="rpg-rule my-3" />
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+            <span className="text-rpg-text-soft">
+              {totalXp} XP au total
+            </span>
+            <span className="hidden h-3.5 w-px bg-rpg-border sm:block" />
+            <span className="text-rpg-text-soft">
+              Aujourd&rsquo;hui : <span className="font-medium text-rpg-gold">+{todayXp} XP</span>
+            </span>
           </div>
           <div className="mt-3 h-3 overflow-hidden rounded-full bg-rpg-bg">
             <div
@@ -433,7 +442,8 @@ export default function RpgPage({ userId }: RpgPageProps) {
             />
           </div>
           <p className="mt-1 text-xs text-rpg-text-soft">
-            {characterLevel.xpIntoLevel} / {characterLevel.xpForNextLevel} XP · {totalXp} XP au total
+            {characterLevel.xpIntoLevel} / {characterLevel.xpForNextLevel} XP jusqu&rsquo;au niveau{" "}
+            {characterLevel.level + 1}
           </p>
         </Card>
 
@@ -466,8 +476,9 @@ export default function RpgPage({ userId }: RpgPageProps) {
                 const currentLevel = levelByStat.get(stat.key) ?? 1;
                 return (
                   <div key={stat.key}>
-                    <p className="mb-2 text-xs font-medium text-rpg-text-soft">
-                      {stat.icon} {stat.name} — niveau {currentLevel}
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-rpg-text-soft">
+                      <RpgStatIcon statKey={stat.key} className="h-3.5 w-3.5" />
+                      {stat.name} — niveau {currentLevel}
                     </p>
                     <div className="space-y-1.5">
                       {chain.map((quest) => {
@@ -553,8 +564,9 @@ export default function RpgPage({ userId }: RpgPageProps) {
                       onChange={() => handleToggleQuestToday(quest)}
                       className="h-5 w-5 shrink-0 accent-rpg-gold"
                     />
-                    <span className="min-w-0 flex-1 text-rpg-text">
-                      {stat?.icon} {quest.title}
+                    <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
+                      {stat && <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />}
+                      {quest.title}
                     </span>
                     <Badge variant="rpg" className="shrink-0">
                       +{quest.xp_value} XP
@@ -636,8 +648,9 @@ export default function RpgPage({ userId }: RpgPageProps) {
                         key={quest.id}
                         className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
                       >
-                        <span className="min-w-0 flex-1 text-rpg-text">
-                          {stat?.icon} {quest.title}
+                        <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
+                          {stat && <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />}
+                          {quest.title}
                         </span>
                         <span className="shrink-0 text-xs text-rpg-text-soft">+{quest.xp_value} XP</span>
                         <button
@@ -758,8 +771,9 @@ export default function RpgPage({ userId }: RpgPageProps) {
                           key={quest.id}
                           className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
                         >
-                          <span className="min-w-0 flex-1 text-rpg-text">
-                            {stat?.icon} {quest.title}
+                          <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
+                            {stat && <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />}
+                            {quest.title}
                           </span>
                           <span className="shrink-0 text-xs text-rpg-text-soft">
                             Nv. {quest.unlock_level} · +{quest.xp_reward} XP

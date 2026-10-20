@@ -49,3 +49,19 @@ export function computeLevel(totalXp: number): LevelInfo {
     xpForNextLevel: nextThreshold - currentThreshold,
   };
 }
+
+// Titre de rang affiché à côté du niveau sur la fiche de personnage (voir
+// RpgPage.tsx) — pure décoration, aucune incidence sur les quêtes
+// principales (qui se débloquent sur le niveau d'une capacité précise, pas
+// sur ce rang global).
+const LEVEL_TITLES: { minLevel: number; title: string }[] = [
+  { minLevel: 11, title: "Maître" },
+  { minLevel: 8, title: "Expert" },
+  { minLevel: 5, title: "Vétéran" },
+  { minLevel: 3, title: "Apprenti" },
+  { minLevel: 1, title: "Novice" },
+];
+
+export function levelTitle(level: number): string {
+  return (LEVEL_TITLES.find((t) => level >= t.minLevel) ?? LEVEL_TITLES[LEVEL_TITLES.length - 1]).title;
+}
