@@ -220,9 +220,18 @@ connecté (voir `NavTabs.tsx`).
   `fetchTikTokPreview`). Sur chaque fiche (`RecipeCard.tsx`), la miniature
   devient l'image de couverture en haut de la carte (`<img>` natif plutôt
   que `next/image`, pour ne pas avoir à lister tous les sous-domaines du
-  CDN TikTok dans `next.config` — un `onError` masque l'image si son lien
-  expire un jour) et la légende reste dans un `<details>` repliable en
-  dessous.
+  CDN TikTok dans `next.config`) et la légende reste dans un `<details>`
+  repliable en dessous.
+  **Miniatures auto-réparées** : `thumbnail_url` est un lien signé du CDN
+  TikTok qui expire après un moment (observé en production : les
+  miniatures disparaissaient progressivement sur les recettes plus
+  anciennes). Plutôt que de simplement masquer l'image cassée,
+  `RecipeCard.tsx` (`handleThumbnailError`, déclenché par l'`onError` de
+  l'`<img>`) redemande l'oEmbed TikTok pour cette recette afin d'obtenir
+  une URL fraîche, puis `RecipesPage.tsx` (`handleThumbnailRefresh`) la
+  persiste en base — auto-guérison silencieuse à chaque affichage d'une
+  miniature expirée, une seule tentative par affichage (`refreshAttempted`)
+  pour ne pas boucler si l'oEmbed échoue aussi.
   Déclenchement automatique à deux endroits : (1) juste après un partage
   Android si le lien partagé est TikTok, (2) à la perte de focus (`onBlur`)
   du champ lien si elle colle un lien manuellement — `lastFetchedCaptionUrl`
@@ -426,6 +435,34 @@ lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
   schéma clair (succès = teinte foncée) / sombre (succès = teinte
   éclaircie) — voir les classes conditionnelles dans Dashboard.tsx,
   HistorySection.tsx et PointsChart.tsx plutôt qu'une couleur en dur.
+
+## Composants UI (shadcn/ui, écrits à la main)
+- `components/ui/` contient des primitives façon shadcn/ui (`Button`,
+  `Card`, `Badge`) — code standard de cette bibliothèque, mais recopié à
+  la main plutôt que généré par leur CLI (`npx shadcn init`/`add` appelle
+  `ui.shadcn.com`, bloqué par la politique réseau du conteneur cloud où ce
+  projet est développé). Le résultat est équivalent : mêmes fichiers, même
+  API (`variant`/`size` via `class-variance-authority`), juste sans
+  l'assistant interactif.
+- `lib/utils.ts` : `cn()` (clsx + tailwind-merge), utilitaire standard de
+  tous les composants `ui/`.
+- Ces primitives ne redéfinissent **pas** de nouvelles couleurs : elles
+  lisent des tokens sémantiques (`--color-background`, `--color-card`,
+  `--color-primary`, `--color-secondary`, `--color-muted`,
+  `--color-border`, `--color-destructive`, ...) ajoutés dans le même bloc
+  `@theme` que la palette "clean girl" dans `app/globals.css`, et qui
+  pointent via `var()` vers les tokens existants (`--color-blush-deep`,
+  `--color-ivory`, `--color-sand`, ...). Conséquence : `<Button>`,
+  `<Card>`, `<Badge>` suivent automatiquement le thème clair/sombre sans
+  code supplémentaire, exactement comme le reste de l'appli.
+- Espace RPG non concerné pour l'instant : il garde ses classes
+  `bg-rpg-*`/`text-rpg-*` écrites à la main (palette toujours sombre, voir
+  plus bas) plutôt que ces primitives — `PushReminderToggle.tsx` illustre
+  le pattern : branche `isRpg` → classes manuelles, branche par défaut →
+  `<Button variant="outline">`.
+- Adopté pour l'instant sur le Dashboard (`HabitCard`, panneau jauge du
+  jour, `PushReminderToggle`) comme pilote ; à étendre à Recettes/RPG si
+  le rendu convient.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies

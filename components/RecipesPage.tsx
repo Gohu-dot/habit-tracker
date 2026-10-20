@@ -227,6 +227,26 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
     }
   }
 
+  // Appelé par RecipeCard quand une miniature TikTok expirée a été
+  // remplacée par une fraîche (ou n'a pas pu être récupérée à nouveau) :
+  // on persiste le résultat pour éviter de retenter à chaque affichage.
+  async function handleThumbnailRefresh(recipe: Recipe, newThumbnailUrl: string | null) {
+    const { error } = await supabase
+      .from("recipes")
+      .update({ thumbnail_url: newThumbnailUrl })
+      .eq("id", recipe.id);
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setRecipes((prev) =>
+      prev.map((r) => (r.id === recipe.id ? { ...r, thumbnail_url: newThumbnailUrl } : r))
+    );
+    setSurpriseRecipe((prev) =>
+      prev?.id === recipe.id ? { ...prev, thumbnail_url: newThumbnailUrl } : prev
+    );
+  }
+
   const filteredRecipes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return recipes.filter((r) => {
@@ -480,6 +500,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
               onCycleStatus={() => handleStatusCycle(surpriseRecipe)}
               onEdit={() => handleStartEdit(surpriseRecipe)}
               onDelete={() => handleDelete(surpriseRecipe)}
+              onThumbnailRefresh={(newUrl) => handleThumbnailRefresh(surpriseRecipe, newUrl)}
             />
           </div>
         </div>
@@ -500,6 +521,7 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
               onCycleStatus={() => handleStatusCycle(recipe)}
               onEdit={() => handleStartEdit(recipe)}
               onDelete={() => handleDelete(recipe)}
+              onThumbnailRefresh={(newUrl) => handleThumbnailRefresh(recipe, newUrl)}
             />
           ))}
         </div>

@@ -241,6 +241,10 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   écrasée. Non disponible pour Instagram (pas de service équivalent
   accessible sans compte développeur Meta) : l'encart et la miniature
   n'apparaissent alors simplement pas.
+  Ces miniatures sont des liens signés qui expirent après un moment côté
+  TikTok ; si une miniature disparaît sur une vieille recette, le site va
+  automatiquement en rechercher une fraîche au prochain affichage — rien
+  à faire de ton côté.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste

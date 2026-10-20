@@ -30,6 +30,28 @@
   --color-terracotta: #e3a988;
   --color-terracotta-deep: #b5652f;
 
+  /* Tokens sémantiques façon shadcn/ui, posés sur la palette "clean girl"
+     ci-dessus plutôt que sur une palette neutre : les composants de
+     components/ui (Button, Card, Badge...) héritent donc automatiquement
+     du thème clair/sombre existant sans bloc [data-theme="dark"] séparé,
+     puisqu'ils référencent via var() les couleurs déjà re-thémées. */
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-ivory);
+  --color-card-foreground: var(--color-ink);
+  --color-primary: var(--color-blush-deep);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-sand);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-sand);
+  --color-muted-foreground: var(--color-ink-soft);
+  --color-border: var(--color-sand);
+  --color-input: var(--color-sand);
+  --color-ring: var(--color-blush-deep);
+  --color-destructive: var(--color-danger-text);
+  --color-destructive-foreground: #ffffff;
+  --radius: 0.75rem;
+
   /* Palette RPG (espace dédié, dark fantasy) : volontairement PAS redéfinie
      sous [data-theme="dark"] plus bas — cet espace garde toujours la même
      ambiance sombre, indépendamment du choix clair/sombre du reste du site. */

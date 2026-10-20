@@ -9,6 +9,7 @@ type RecipeCardProps = {
   onCycleStatus: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onThumbnailRefresh: (newThumbnailUrl: string | null) => void;
 };
 
 const STATUS_STYLES: Record<RecipeStatusKey, string> = {
@@ -17,14 +18,44 @@ const STATUS_STYLES: Record<RecipeStatusKey, string> = {
   validee: "bg-blush-deep text-white",
 };
 
-export default function RecipeCard({ recipe, onCycleStatus, onEdit, onDelete }: RecipeCardProps) {
+export default function RecipeCard({
+  recipe,
+  onCycleStatus,
+  onEdit,
+  onDelete,
+  onThumbnailRefresh,
+}: RecipeCardProps) {
   const categoryName =
     RECIPE_CATEGORIES.find((c) => c.key === recipe.category)?.name ?? recipe.category;
   const statusName = RECIPE_STATUSES.find((s) => s.key === recipe.status)?.name ?? recipe.status;
-  // Les miniatures viennent du CDN de TikTok, dont les liens peuvent expirer
-  // avec le temps : on masque simplement l'image plutôt que d'afficher une
-  // icône cassée.
+  // Les miniatures viennent du CDN de TikTok, dont les liens signés expirent
+  // avec le temps. Plutôt que de masquer directement une image cassée, on
+  // retente une seule fois une nouvelle miniature via l'oEmbed (voir
+  // fetchTikTokPreview côté parent) avant d'abandonner.
   const [thumbnailBroken, setThumbnailBroken] = useState(false);
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
+
+  async function handleThumbnailError() {
+    if (refreshAttempted) {
+      setThumbnailBroken(true);
+      return;
+    }
+    setRefreshAttempted(true);
+    try {
+      const res = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(recipe.url)}`);
+      const data = await res.json();
+      const freshUrl = typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : null;
+      if (freshUrl && freshUrl !== recipe.thumbnail_url) {
+        onThumbnailRefresh(freshUrl);
+      } else {
+        onThumbnailRefresh(null);
+        setThumbnailBroken(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setThumbnailBroken(true);
+    }
+  }
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-sand bg-ivory shadow-sm">
@@ -33,7 +64,7 @@ export default function RecipeCard({ recipe, onCycleStatus, onEdit, onDelete }: 
         <img
           src={recipe.thumbnail_url}
           alt=""
-          onError={() => setThumbnailBroken(true)}
+          onError={handleThumbnailError}
           className="h-40 w-full object-cover"
         />
       )}

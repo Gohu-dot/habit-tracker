@@ -37,6 +37,8 @@ import HabitStatsSection from "./HabitStatsSection";
 import HistorySection from "./HistorySection";
 import PointsChart from "./PointsChart";
 import PushReminderToggle from "./PushReminderToggle";
+import { Badge } from "./ui/badge";
+import { Card } from "./ui/card";
 
 type DashboardProps = {
   userId: string;
@@ -286,11 +288,7 @@ export default function Dashboard({ userId }: DashboardProps) {
         <PushReminderToggle userId={userId} />
       </div>
 
-      <div
-        className={`flex items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm ${
-          celebrate ? "animate-celebrate" : ""
-        }`}
-      >
+      <Card className={`flex items-center gap-4 p-4 ${celebrate ? "animate-celebrate" : ""}`}>
         <Gauge
           value={totalPoints}
           target={MAX_DAILY_POINTS}
@@ -314,13 +312,11 @@ export default function Dashboard({ userId }: DashboardProps) {
             {isPeriodToday ? " (abaissé — règles)" : ""}
           </p>
           {success ? (
-            <p
-              className={`mt-1 text-sm font-medium ${
-                isPeriodToday ? "text-terracotta-deep" : "text-blush-deep"
-              }`}
+            <Badge
+              className={`mt-1 ${isPeriodToday ? "bg-terracotta-deep/15 text-terracotta-deep" : ""}`}
             >
               {celebrate ? "✨ Objectif atteint !" : "✓ Objectif atteint"}
-            </p>
+            </Badge>
           ) : (
             <p className="mt-1 text-sm text-ink-soft">
               Encore {todayTarget - totalPoints} point
@@ -329,7 +325,7 @@ export default function Dashboard({ userId }: DashboardProps) {
           )}
           <p className="mt-2 text-sm italic text-ink-soft">{phrase}</p>
         </div>
-      </div>
+      </Card>
 
       <PointsChart
         dailyTotals={dailyTotals}

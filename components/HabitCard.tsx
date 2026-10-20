@@ -1,6 +1,8 @@
 "use client";
 
 import type { HABITS } from "@/lib/habits";
+import { Badge } from "./ui/badge";
+import { Card } from "./ui/card";
 
 type HabitCardProps = {
   habit: (typeof HABITS)[number];
@@ -10,19 +12,23 @@ type HabitCardProps = {
 
 export default function HabitCard({ habit, done, onToggle }: HabitCardProps) {
   return (
-    <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-sand bg-ivory p-4 shadow-sm">
-      <input
-        type="checkbox"
-        checked={done}
-        onChange={() => onToggle(habit)}
-        className="h-6 w-6 shrink-0 accent-blush-deep"
-      />
+    <Card
+      className={`transition-colors ${done ? "border-primary/40 bg-primary/5" : ""}`}
+    >
+      <label className="flex cursor-pointer items-center gap-4 p-4">
+        <input
+          type="checkbox"
+          checked={done}
+          onChange={() => onToggle(habit)}
+          className="h-6 w-6 shrink-0 accent-blush-deep"
+        />
 
-      <span className="min-w-0 flex-1 text-ink">{habit.name}</span>
+        <span className="min-w-0 flex-1 text-ink">{habit.name}</span>
 
-      <span className="shrink-0 rounded-full bg-blush/40 px-2.5 py-1 text-sm font-medium text-blush-deep">
-        +{habit.points} pt{habit.points > 1 ? "s" : ""}
-      </span>
-    </label>
+        <Badge className="shrink-0">
+          +{habit.points} pt{habit.points > 1 ? "s" : ""}
+        </Badge>
+      </label>
+    </Card>
   );
 }
