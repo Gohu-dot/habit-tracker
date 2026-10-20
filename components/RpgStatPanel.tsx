@@ -30,7 +30,7 @@ export default function RpgStatPanel({ stat, xp }: RpgStatPanelProps) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="font-rpg-display tracking-wide text-rpg-text">{stat.name}</span>
-          <span className="font-rpg-display text-xl leading-none text-rpg-gold">{level}</span>
+          <span className="font-rpg-pixel text-lg leading-none text-rpg-gold">{level}</span>
         </div>
         <div
           className={`mt-1.5 h-1.5 overflow-hidden rounded-full bg-rpg-bg ${almostThere ? "rpg-glow" : ""}`}

@@ -632,6 +632,46 @@ fonctionnement, pas que l'habillage :
   plutôt que "case à cocher d'application de productivité", sur les
   quêtes du jour et les quêtes principales.
 
+### Direction artistique pixel art + portrait de personnage
+Suite à un premier portrait généré par l'utilisateur (Gemini, style pixel
+art 16-bit, cadre ornemental peint directement dans l'image) : adoption
+du pixel art comme direction graphique de l'espace RPG, avec un système
+de portrait évolutif par niveau.
+- **`public/rpg/portraits/`** : portraits de personnage (pixel art,
+  générés hors session — pas d'outil de génération d'image disponible
+  ici). Chaque image porte déjà son propre cadre peint ; `RpgPortrait.tsx`
+  les affiche donc **carrées telles quelles** (`imageSrc` fourni), sans
+  médaillon circulaire CSS par-dessus — ce médaillon (silhouette SVG +
+  cadre `border-2 border-rpg-gold-dim`) ne reste qu'en repli quand
+  `imageSrc` est absent.
+- **`portraitForLevel()`** (`lib/rpg.ts`) : fait correspondre le niveau du
+  personnage au portrait du palier débloqué, même convention que
+  `levelTitle()` (tableau de paliers triés du plus haut seuil au plus
+  bas, un seul palier pour l'instant — niveau 1). Le personnage est censé
+  évoluer visuellement en montant de niveau (templier déchu au départ) ;
+  ajouter un portrait = ajouter une entrée à `PORTRAIT_TIERS`, rien
+  d'autre à modifier.
+  **Système d'équipement évoqué mais pas construit** : l'idée de pouvoir
+  équiper le personnage (bonus de stats via de l'équipement visuel sur le
+  portrait) a été mentionnée comme direction souhaitée, mais rien n'existe
+  en base ni en code pour l'instant — pas de table dédiée, pas
+  d'inventaire. À concevoir explicitement (schéma de données, règles de
+  bonus) avant d'être implémenté, ne pas improviser une mini-version
+  incomplète.
+- **Polices remplacées** : `Press_Start_2P`/`VT323` (Google Fonts,
+  `app/layout.tsx` → `--font-rpg-pixel-display`/`--font-rpg-pixel-body`)
+  à la place de Cinzel/EB Garamond (essai précédent, plus "manuscrit
+  médiéval" que "jeu vidéo rétro", écarté une fois le pixel art choisi
+  comme direction). `--font-rpg-display` (texte courant + titres, via la
+  classe déjà existante `font-rpg-display`) pointe maintenant vers VT323
+  — choisie pour sa lisibilité même sur des mots longs
+  ("PERSONNALITÉ", "QUÊTES PRINCIPALES"), contrairement à Press Start 2P
+  qui est réservée à un nouveau token `--font-rpg-pixel`
+  (`font-rpg-pixel`) pour les seuls gros chiffres "héros" (score d'une
+  caractéristique dans `RpgStatPanel.tsx`, numéro de niveau dans le
+  bandeau de personnage) : à cette taille de police, Press Start 2P
+  déborderait ou passerait à la ligne sur un mot un peu long.
+
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies
   RLS (`user_id = auth.uid()`) définies dans `supabase/schema.sql`.

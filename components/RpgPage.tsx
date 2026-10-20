@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { startOfMonth, startOfWeek, todayISO } from "@/lib/date";
 import { monthDays } from "@/lib/history";
-import { RPG_STATS, computeLevel, levelTitle, type RpgStatKey } from "@/lib/rpg";
+import { RPG_STATS, computeLevel, levelTitle, portraitForLevel, type RpgStatKey } from "@/lib/rpg";
 import {
   computeDailyXp,
   computeRpgBestStreak,
@@ -422,11 +422,14 @@ export default function RpgPage({ userId }: RpgPageProps) {
         {activeTab === "personnage" && (
           <div className="space-y-6">
             <Card variant="rpg" className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
-              <RpgPortrait title={levelTitle(characterLevel.level)} />
+              <RpgPortrait
+                title={levelTitle(characterLevel.level)}
+                imageSrc={portraitForLevel(characterLevel.level)}
+              />
               <div className="min-w-0 flex-1">
-                <p className="font-rpg-display text-2xl font-semibold tracking-wide text-rpg-text">
-                  {levelTitle(characterLevel.level)}{" "}
-                  <span className="text-rpg-gold">— Niveau {characterLevel.level}</span>
+                <p className="font-rpg-display text-2xl tracking-wide text-rpg-text">
+                  {levelTitle(characterLevel.level)} — Niveau{" "}
+                  <span className="font-rpg-pixel text-lg text-rpg-gold">{characterLevel.level}</span>
                 </p>
                 <div className="rpg-rule my-3" />
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">

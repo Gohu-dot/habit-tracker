@@ -3,8 +3,14 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-rpg-display: var(--font-rpg-cinzel);
-  --font-rpg-serif: var(--font-rpg-garamond);
+  /* VT323 : titres/labels/texte courant de l'espace RPG — pixel art mais
+     lisible même sur des mots longs ("PERSONNALITÉ", "QUÊTES
+     PRINCIPALES"), contrairement à Press Start 2P ci-dessous. */
+  --font-rpg-display: var(--font-rpg-pixel-body);
+  /* Press Start 2P : réservée aux gros chiffres "héros" (le score d'une
+     caractéristique, le numéro de niveau) — trop blocky pour du texte,
+     voir RpgStatPanel.tsx/RpgPage.tsx pour son usage ciblé. */
+  --font-rpg-pixel: var(--font-rpg-pixel-display);
 }
 
 /* Volontairement dans un bloc @theme séparé (sans "inline") : Tailwind doit
@@ -128,11 +134,10 @@
    Posé sur un wrapper dédié plutôt que sur body pour ne jamais affecter le
    reste du site. */
 .rpg-backdrop {
-  /* Texte courant de l'espace RPG en serif "manuscrit ancien" (voir
-     --font-rpg-serif ci-dessus) : posé ici une fois pour tout hériter,
-     plutôt que sur chaque composant. Les titres (font-rpg-display, Cinzel)
-     le redéfinissent explicitement là où ils sont utilisés. */
-  font-family: var(--font-rpg-serif);
+  /* Texte courant de l'espace RPG en VT323 (voir --font-rpg-display
+     ci-dessus) : posé ici une fois pour tout hériter, plutôt que sur
+     chaque composant. */
+  font-family: var(--font-rpg-display);
   background-color: var(--color-rpg-bg);
   background-image:
     radial-gradient(ellipse 900px 500px at 20% -10%, color-mix(in srgb, var(--color-rpg-accent) 16%, transparent), transparent),

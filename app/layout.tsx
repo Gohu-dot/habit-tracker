@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, EB_Garamond, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Press_Start_2P, VT323 } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -13,23 +13,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Police display réservée à l'espace RPG (titres uniquement, via la classe
-// font-display sur RpgPage) — jamais utilisée sur le reste du site, qui
-// garde Geist partout.
-const cinzel = Cinzel({
-  variable: "--font-rpg-cinzel",
+// Polices "pixel art" réservées à l'espace RPG, en phase avec le portrait
+// généré (voir public/rpg/portraits/) — remplacent Cinzel/EB Garamond
+// (essai précédent, plus "manuscrit médiéval" que "jeu vidéo rétro").
+// Jamais utilisées hors de l'espace RPG, qui garde Geist partout ailleurs.
+// Press Start 2P : très blocky, réservée aux gros titres/chiffres (le
+// niveau, "NIVEAU X") — illisible en paragraphe à cette densité de pixels.
+const pressStart2P = Press_Start_2P({
+  variable: "--font-rpg-pixel-display",
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: "400",
 });
 
-// Police de texte courant de l'espace RPG (labels, descriptions...) : un
-// serif plus "manuscrit ancien" que Geist, en complément de Cinzel qui
-// reste réservé aux grands titres. Même logique : jamais utilisée hors de
-// l'espace RPG.
-const ebGaramond = EB_Garamond({
-  variable: "--font-rpg-garamond",
+// VT323 : pixel art aussi mais beaucoup plus lisible en texte courant
+// (c'est un monospace pensé pour de longues lignes de terminal rétro) —
+// labels, descriptions, tout le texte qui n'est pas un titre.
+const vt323 = VT323({
+  variable: "--font-rpg-pixel-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -51,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${ebGaramond.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${vt323.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-cream text-ink">

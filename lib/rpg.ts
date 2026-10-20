@@ -65,3 +65,17 @@ const LEVEL_TITLES: { minLevel: number; title: string }[] = [
 export function levelTitle(level: number): string {
   return (LEVEL_TITLES.find((t) => level >= t.minLevel) ?? LEVEL_TITLES[LEVEL_TITLES.length - 1]).title;
 }
+
+// Portrait de personnage par palier de niveau (pixel art généré ailleurs
+// qu'ici, voir public/rpg/portraits/ et RpgPortrait.tsx) : le personnage
+// est censé évoluer visuellement en montant de niveau. Un seul portrait
+// existe pour l'instant (niveau 1) ; ajouter un palier ici suffira à
+// afficher un nouveau portrait au bon niveau, sans toucher à RpgPage.tsx.
+// Triés du plus haut seuil au plus bas, même convention que LEVEL_TITLES.
+const PORTRAIT_TIERS: { minLevel: number; src: string }[] = [
+  { minLevel: 1, src: "/rpg/portraits/templier-niveau-1.jpg" },
+];
+
+export function portraitForLevel(level: number): string {
+  return (PORTRAIT_TIERS.find((t) => level >= t.minLevel) ?? PORTRAIT_TIERS[PORTRAIT_TIERS.length - 1]).src;
+}
