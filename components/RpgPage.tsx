@@ -15,9 +15,11 @@ import type { RpgMainQuest, RpgQuest, RpgQuestLog } from "@/lib/types";
 import AppHeader from "./AppHeader";
 import PushReminderToggle from "./PushReminderToggle";
 import RpgHistorySection from "./RpgHistorySection";
+import RpgPortrait from "./RpgPortrait";
 import RpgSectionHeading from "./RpgSectionHeading";
 import RpgStatIcon from "./RpgStatIcon";
 import RpgStatPanel from "./RpgStatPanel";
+import RpgTabs, { type RpgTabKey } from "./RpgTabs";
 import RpgXpChart from "./RpgXpChart";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -33,6 +35,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [today] = useState(todayISO());
+  const [activeTab, setActiveTab] = useState<RpgTabKey>("personnage");
 
   const [manageOpen, setManageOpen] = useState(false);
   const [questTitle, setQuestTitle] = useState("");
@@ -414,396 +417,430 @@ export default function RpgPage({ userId }: RpgPageProps) {
 
         <PushReminderToggle userId={userId} variant="rpg" />
 
-        <Card variant="rpg" className="p-5">
-          <p className="font-rpg-display text-2xl font-semibold tracking-wide text-rpg-text">
-            {levelTitle(characterLevel.level)}{" "}
-            <span className="text-rpg-gold">— Niveau {characterLevel.level}</span>
-          </p>
-          <div className="rpg-rule my-3" />
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
-            <span className="text-rpg-text-soft">
-              {totalXp} XP au total
-            </span>
-            <span className="hidden h-3.5 w-px bg-rpg-border sm:block" />
-            <span className="text-rpg-text-soft">
-              Aujourd&rsquo;hui : <span className="font-medium text-rpg-gold">+{todayXp} XP</span>
-            </span>
+        <RpgTabs active={activeTab} onChange={setActiveTab} />
+
+        {activeTab === "personnage" && (
+          <div className="space-y-6">
+            <Card variant="rpg" className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
+              <RpgPortrait title={levelTitle(characterLevel.level)} />
+              <div className="min-w-0 flex-1">
+                <p className="font-rpg-display text-2xl font-semibold tracking-wide text-rpg-text">
+                  {levelTitle(characterLevel.level)}{" "}
+                  <span className="text-rpg-gold">— Niveau {characterLevel.level}</span>
+                </p>
+                <div className="rpg-rule my-3" />
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                  <span className="text-rpg-text-soft">{totalXp} XP au total</span>
+                  <span className="hidden h-3.5 w-px bg-rpg-border sm:block" />
+                  <span className="text-rpg-text-soft">
+                    Aujourd&rsquo;hui : <span className="font-medium text-rpg-gold">+{todayXp} XP</span>
+                  </span>
+                </div>
+                <div className="mt-3 h-3 overflow-hidden rounded-full bg-rpg-bg">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-rpg-accent to-rpg-gold"
+                    style={{
+                      width: `${
+                        characterLevel.xpForNextLevel > 0
+                          ? Math.min(
+                              100,
+                              Math.round((characterLevel.xpIntoLevel / characterLevel.xpForNextLevel) * 100)
+                            )
+                          : 100
+                      }%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-rpg-text-soft">
+                  {characterLevel.xpIntoLevel} / {characterLevel.xpForNextLevel} XP jusqu&rsquo;au niveau{" "}
+                  {characterLevel.level + 1}
+                </p>
+              </div>
+            </Card>
+
+            <Card variant="rpg" className="p-5">
+              <RpgSectionHeading>Caractéristiques</RpgSectionHeading>
+              <div className="divide-y divide-rpg-border/50 sm:grid sm:grid-cols-2 sm:gap-x-8 sm:divide-y-0">
+                {RPG_STATS.map((stat) => (
+                  <RpgStatPanel key={stat.key} stat={stat} xp={xpByStat.get(stat.key) ?? 0} />
+                ))}
+              </div>
+            </Card>
           </div>
-          <div className="mt-3 h-3 overflow-hidden rounded-full bg-rpg-bg">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-rpg-accent to-rpg-gold"
-              style={{
-                width: `${
-                  characterLevel.xpForNextLevel > 0
-                    ? Math.min(100, Math.round((characterLevel.xpIntoLevel / characterLevel.xpForNextLevel) * 100))
-                    : 100
-                }%`,
-              }}
-            />
-          </div>
-          <p className="mt-1 text-xs text-rpg-text-soft">
-            {characterLevel.xpIntoLevel} / {characterLevel.xpForNextLevel} XP jusqu&rsquo;au niveau{" "}
-            {characterLevel.level + 1}
-          </p>
-        </Card>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {RPG_STATS.map((stat) => (
-            <RpgStatPanel key={stat.key} stat={stat} xp={xpByStat.get(stat.key) ?? 0} />
-          ))}
-        </div>
-
-        <RpgXpChart dailyXp={dailyXp} monthDays={currentMonthDays} today={today} />
-
-        <RpgHistorySection
-          dailyXp={dailyXp}
-          monthDays={currentMonthDays}
-          today={today}
-          streak={streak}
-          bestStreak={bestStreak}
-          weekStats={weekStats}
-          monthStats={monthStats}
-        />
-
-        {statsWithMainQuests.length > 0 && (
-          <Card variant="rpg" className="p-4">
-            <RpgSectionHeading>🗺️ Quêtes principales</RpgSectionHeading>
-            <div className="space-y-4">
-              {statsWithMainQuests.map((stat) => {
-                const chain = mainQuests
-                  .filter((q) => q.stat_key === stat.key)
-                  .sort((a, b) => a.unlock_level - b.unlock_level);
-                const currentLevel = levelByStat.get(stat.key) ?? 1;
-                return (
-                  <div key={stat.key}>
-                    <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-rpg-text-soft">
-                      <RpgStatIcon statKey={stat.key} className="h-3.5 w-3.5" />
-                      {stat.name} — niveau {currentLevel}
-                    </p>
-                    <div className="space-y-1.5">
-                      {chain.map((quest) => {
-                        const unlocked = currentLevel >= quest.unlock_level;
-                        const completed = Boolean(quest.completed_at);
-                        return (
-                          <div
-                            key={quest.id}
-                            className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
-                              completed
-                                ? "border-rpg-gold/40 bg-rpg-gold/10"
-                                : unlocked
-                                  ? "border-rpg-border bg-rpg-bg"
-                                  : "border-rpg-border bg-rpg-bg opacity-50"
-                            }`}
-                          >
-                            <span className="min-w-0 flex-1 text-sm text-rpg-text">
-                              {completed ? "✅" : unlocked ? "🎯" : "🔒"} {quest.title}
-                            </span>
-                            {completed ? (
-                              <button
-                                type="button"
-                                onClick={() => handleToggleMainQuestComplete(quest)}
-                                className="shrink-0 text-xs text-rpg-text-soft underline hover:text-rpg-text"
-                              >
-                                Annuler
-                              </button>
-                            ) : unlocked ? (
-                              <>
-                                <Badge variant="rpg" className="shrink-0">
-                                  +{quest.xp_reward} XP
-                                </Badge>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="rpg"
-                                  onClick={() => handleToggleMainQuestComplete(quest)}
-                                  className="shrink-0"
-                                >
-                                  Marquer comme accompli
-                                </Button>
-                              </>
-                            ) : (
-                              <Badge variant="rpg-locked" className="shrink-0">
-                                Niveau {quest.unlock_level} requis
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
         )}
 
-        <Card variant="rpg" className="p-4">
-          <RpgSectionHeading>⚔️ Quêtes du jour</RpgSectionHeading>
-          {quests.length === 0 ? (
-            <p className="text-sm text-rpg-text-soft">
-              Aucune quête pour l&rsquo;instant — crée-en une dans &laquo;&nbsp;Gérer mes quêtes&nbsp;&raquo;
-              ci-dessous.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {quests.map((quest) => {
-                const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
-                const done = completedQuestIdsToday.has(quest.id);
-                return (
-                  <label
-                    key={quest.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
-                      done
-                        ? "border-rpg-gold/40 bg-rpg-gold/10"
-                        : "border-rpg-border bg-rpg-bg hover:border-rpg-gold-dim/60"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={done}
-                      onChange={() => handleToggleQuestToday(quest)}
-                      className="h-5 w-5 shrink-0 accent-rpg-gold"
-                    />
-                    <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
-                      {stat && <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />}
-                      {quest.title}
-                    </span>
-                    <Badge variant="rpg" className="shrink-0">
-                      +{quest.xp_value} XP
-                    </Badge>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        <Card variant="rpg" className="p-4">
-          <button
-            type="button"
-            onClick={() => setManageOpen((o) => !o)}
-            className="flex w-full items-center justify-between font-rpg-display text-sm font-semibold uppercase tracking-wider text-rpg-gold"
-          >
-            <span>⚙️ Gérer mes quêtes</span>
-            <span className="text-rpg-text-soft">{manageOpen ? "−" : "+"}</span>
-          </button>
-
-          {manageOpen && (
-            <div className="mt-3 space-y-4">
-              <form onSubmit={handleQuestSubmit} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-rpg-text-soft">
-                    {editingQuestId ? "Modifier la quête" : "Nouvelle quête"}
-                  </p>
-                  {editingQuestId && (
-                    <button
-                      type="button"
-                      onClick={resetQuestForm}
-                      className="text-xs text-rpg-text-soft underline hover:text-rpg-text"
-                    >
-                      Annuler la modification
-                    </button>
-                  )}
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <input
-                    type="text"
-                    required
-                    value={questTitle}
-                    onChange={(e) => setQuestTitle(e.target.value)}
-                    placeholder="Ex. Séance de sport"
-                    className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text placeholder:text-rpg-text-soft sm:col-span-1"
-                  />
-                  <select
-                    value={questStat}
-                    onChange={(e) => setQuestStat(e.target.value as RpgStatKey)}
-                    className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
-                  >
-                    {RPG_STATS.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.icon} {s.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={questXp}
-                    onChange={(e) => setQuestXp(Number(e.target.value))}
-                    className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
-                  />
-                </div>
-                <Button type="submit" variant="rpg" disabled={savingQuest}>
-                  {savingQuest ? "Enregistrement..." : editingQuestId ? "Enregistrer" : "Créer la quête"}
-                </Button>
-              </form>
-
-              {quests.length > 0 && (
-                <div className="space-y-2 border-t border-rpg-border pt-3">
-                  {quests.map((quest) => {
-                    const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
+        {activeTab === "quetes" && (
+          <div className="space-y-6">
+            {statsWithMainQuests.length > 0 && (
+              <Card variant="rpg" className="p-4">
+                <RpgSectionHeading>🗺️ Quêtes principales</RpgSectionHeading>
+                <div className="space-y-4">
+                  {statsWithMainQuests.map((stat) => {
+                    const chain = mainQuests
+                      .filter((q) => q.stat_key === stat.key)
+                      .sort((a, b) => a.unlock_level - b.unlock_level);
+                    const currentLevel = levelByStat.get(stat.key) ?? 1;
                     return (
-                      <div
-                        key={quest.id}
-                        className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
-                      >
-                        <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
-                          {stat && <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />}
-                          {quest.title}
-                        </span>
-                        <span className="shrink-0 text-xs text-rpg-text-soft">+{quest.xp_value} XP</span>
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditQuest(quest)}
-                          aria-label="Modifier cette quête"
-                          title="Modifier"
-                          className="shrink-0 text-rpg-text-soft hover:text-rpg-text"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteQuest(quest)}
-                          aria-label="Supprimer cette quête"
-                          title="Supprimer"
-                          className="shrink-0 text-rpg-text-soft hover:text-rpg-danger"
-                        >
-                          ✕
-                        </button>
+                      <div key={stat.key}>
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-rpg-text-soft">
+                          <RpgStatIcon statKey={stat.key} className="h-3.5 w-3.5" />
+                          {stat.name} — niveau {currentLevel}
+                        </p>
+                        <div className="space-y-1.5">
+                          {chain.map((quest) => {
+                            const unlocked = currentLevel >= quest.unlock_level;
+                            const completed = Boolean(quest.completed_at);
+                            return (
+                              <div
+                                key={quest.id}
+                                className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+                                  completed
+                                    ? "border-rpg-gold/40 bg-rpg-gold/10"
+                                    : unlocked
+                                      ? "border-rpg-border bg-rpg-bg"
+                                      : "border-rpg-border bg-rpg-bg opacity-50"
+                                }`}
+                              >
+                                <span
+                                  className={`min-w-0 flex-1 text-sm ${
+                                    completed ? "italic text-rpg-text-soft line-through" : "text-rpg-text"
+                                  }`}
+                                >
+                                  {completed ? "✅" : unlocked ? "🎯" : "🔒"} {quest.title}
+                                </span>
+                                {completed ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleMainQuestComplete(quest)}
+                                    className="shrink-0 text-xs text-rpg-text-soft underline hover:text-rpg-text"
+                                  >
+                                    Annuler
+                                  </button>
+                                ) : unlocked ? (
+                                  <>
+                                    <Badge variant="rpg" className="shrink-0">
+                                      +{quest.xp_reward} XP
+                                    </Badge>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="rpg"
+                                      onClick={() => handleToggleMainQuestComplete(quest)}
+                                      className="shrink-0"
+                                    >
+                                      Marquer comme accompli
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Badge variant="rpg-locked" className="shrink-0">
+                                    Niveau {quest.unlock_level} requis
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
+              </Card>
+            )}
+
+            <Card variant="rpg" className="p-4">
+              <RpgSectionHeading>⚔️ Quêtes du jour</RpgSectionHeading>
+              {quests.length === 0 ? (
+                <p className="text-sm text-rpg-text-soft">
+                  Aucune quête pour l&rsquo;instant — crée-en une dans &laquo;&nbsp;Gérer mes
+                  quêtes&nbsp;&raquo; ci-dessous.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {quests.map((quest) => {
+                    const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
+                    const done = completedQuestIdsToday.has(quest.id);
+                    return (
+                      <label
+                        key={quest.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
+                          done
+                            ? "border-rpg-gold/40 bg-rpg-gold/10"
+                            : "border-rpg-border bg-rpg-bg hover:border-rpg-gold-dim/60"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={done}
+                          onChange={() => handleToggleQuestToday(quest)}
+                          className="h-5 w-5 shrink-0 accent-rpg-gold"
+                        />
+                        <span
+                          className={`flex min-w-0 flex-1 items-center gap-2 ${
+                            done ? "italic text-rpg-text-soft line-through" : "text-rpg-text"
+                          }`}
+                        >
+                          {stat && (
+                            <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />
+                          )}
+                          {quest.title}
+                        </span>
+                        <Badge variant="rpg" className="shrink-0">
+                          +{quest.xp_value} XP
+                        </Badge>
+                      </label>
+                    );
+                  })}
+                </div>
               )}
-            </div>
-          )}
-        </Card>
+            </Card>
 
-        <Card variant="rpg" className="p-4">
-          <button
-            type="button"
-            onClick={() => setManageMainOpen((o) => !o)}
-            className="flex w-full items-center justify-between font-rpg-display text-sm font-semibold uppercase tracking-wider text-rpg-gold"
-          >
-            <span>⚙️ Gérer les quêtes principales</span>
-            <span className="text-rpg-text-soft">{manageMainOpen ? "−" : "+"}</span>
-          </button>
+            <Card variant="rpg" className="p-4">
+              <button
+                type="button"
+                onClick={() => setManageOpen((o) => !o)}
+                className="flex w-full items-center justify-between font-rpg-display text-sm font-semibold uppercase tracking-wider text-rpg-gold"
+              >
+                <span>⚙️ Gérer mes quêtes</span>
+                <span className="text-rpg-text-soft">{manageOpen ? "−" : "+"}</span>
+              </button>
 
-          {manageMainOpen && (
-            <div className="mt-3 space-y-4">
-              <form onSubmit={handleMainQuestSubmit} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-rpg-text-soft">
-                    {editingMainQuestId ? "Modifier la quête principale" : "Nouvelle quête principale"}
-                  </p>
-                  {editingMainQuestId && (
-                    <button
-                      type="button"
-                      onClick={resetMainQuestForm}
-                      className="text-xs text-rpg-text-soft underline hover:text-rpg-text"
-                    >
-                      Annuler la modification
-                    </button>
+              {manageOpen && (
+                <div className="mt-3 space-y-4">
+                  <form onSubmit={handleQuestSubmit} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-rpg-text-soft">
+                        {editingQuestId ? "Modifier la quête" : "Nouvelle quête"}
+                      </p>
+                      {editingQuestId && (
+                        <button
+                          type="button"
+                          onClick={resetQuestForm}
+                          className="text-xs text-rpg-text-soft underline hover:text-rpg-text"
+                        >
+                          Annuler la modification
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <input
+                        type="text"
+                        required
+                        value={questTitle}
+                        onChange={(e) => setQuestTitle(e.target.value)}
+                        placeholder="Ex. Séance de sport"
+                        className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text placeholder:text-rpg-text-soft sm:col-span-1"
+                      />
+                      <select
+                        value={questStat}
+                        onChange={(e) => setQuestStat(e.target.value as RpgStatKey)}
+                        className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                      >
+                        {RPG_STATS.map((s) => (
+                          <option key={s.key} value={s.key}>
+                            {s.icon} {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={questXp}
+                        onChange={(e) => setQuestXp(Number(e.target.value))}
+                        className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                      />
+                    </div>
+                    <Button type="submit" variant="rpg" disabled={savingQuest}>
+                      {savingQuest ? "Enregistrement..." : editingQuestId ? "Enregistrer" : "Créer la quête"}
+                    </Button>
+                  </form>
+
+                  {quests.length > 0 && (
+                    <div className="space-y-2 border-t border-rpg-border pt-3">
+                      {quests.map((quest) => {
+                        const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
+                        return (
+                          <div
+                            key={quest.id}
+                            className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
+                          >
+                            <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
+                              {stat && (
+                                <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />
+                              )}
+                              {quest.title}
+                            </span>
+                            <span className="shrink-0 text-xs text-rpg-text-soft">+{quest.xp_value} XP</span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditQuest(quest)}
+                              aria-label="Modifier cette quête"
+                              title="Modifier"
+                              className="shrink-0 text-rpg-text-soft hover:text-rpg-text"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteQuest(quest)}
+                              aria-label="Supprimer cette quête"
+                              title="Supprimer"
+                              className="shrink-0 text-rpg-text-soft hover:text-rpg-danger"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                <input
-                  type="text"
-                  required
-                  value={mainQuestTitle}
-                  onChange={(e) => setMainQuestTitle(e.target.value)}
-                  placeholder="Ex. Courir 10km"
-                  className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text placeholder:text-rpg-text-soft"
-                />
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <select
-                    value={mainQuestStat}
-                    onChange={(e) => setMainQuestStat(e.target.value as RpgStatKey)}
-                    className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
-                  >
-                    {RPG_STATS.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.icon} {s.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="space-y-1">
-                    <label className="text-xs text-rpg-text-soft">Niveau requis</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={mainQuestUnlockLevel}
-                      onChange={(e) => setMainQuestUnlockLevel(Number(e.target.value))}
-                      className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-rpg-text-soft">Bonus XP</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={mainQuestXpReward}
-                      onChange={(e) => setMainQuestXpReward(Number(e.target.value))}
-                      className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
-                    />
-                  </div>
-                </div>
-                <Button type="submit" variant="rpg" disabled={savingMainQuest}>
-                  {savingMainQuest
-                    ? "Enregistrement..."
-                    : editingMainQuestId
-                      ? "Enregistrer"
-                      : "Créer la quête principale"}
-                </Button>
-              </form>
+              )}
+            </Card>
 
-              {mainQuests.length > 0 && (
-                <div className="space-y-2 border-t border-rpg-border pt-3">
-                  {mainQuests
-                    .slice()
-                    .sort((a, b) => a.stat_key.localeCompare(b.stat_key) || a.unlock_level - b.unlock_level)
-                    .map((quest) => {
-                      const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
-                      return (
-                        <div
-                          key={quest.id}
-                          className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
+            <Card variant="rpg" className="p-4">
+              <button
+                type="button"
+                onClick={() => setManageMainOpen((o) => !o)}
+                className="flex w-full items-center justify-between font-rpg-display text-sm font-semibold uppercase tracking-wider text-rpg-gold"
+              >
+                <span>⚙️ Gérer les quêtes principales</span>
+                <span className="text-rpg-text-soft">{manageMainOpen ? "−" : "+"}</span>
+              </button>
+
+              {manageMainOpen && (
+                <div className="mt-3 space-y-4">
+                  <form onSubmit={handleMainQuestSubmit} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-rpg-text-soft">
+                        {editingMainQuestId ? "Modifier la quête principale" : "Nouvelle quête principale"}
+                      </p>
+                      {editingMainQuestId && (
+                        <button
+                          type="button"
+                          onClick={resetMainQuestForm}
+                          className="text-xs text-rpg-text-soft underline hover:text-rpg-text"
                         >
-                          <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
-                            {stat && <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />}
-                            {quest.title}
-                          </span>
-                          <span className="shrink-0 text-xs text-rpg-text-soft">
-                            Nv. {quest.unlock_level} · +{quest.xp_reward} XP
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleStartEditMainQuest(quest)}
-                            aria-label="Modifier cette quête principale"
-                            title="Modifier"
-                            className="shrink-0 text-rpg-text-soft hover:text-rpg-text"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMainQuest(quest)}
-                            aria-label="Supprimer cette quête principale"
-                            title="Supprimer"
-                            className="shrink-0 text-rpg-text-soft hover:text-rpg-danger"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      );
-                    })}
+                          Annuler la modification
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={mainQuestTitle}
+                      onChange={(e) => setMainQuestTitle(e.target.value)}
+                      placeholder="Ex. Courir 10km"
+                      className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text placeholder:text-rpg-text-soft"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <select
+                        value={mainQuestStat}
+                        onChange={(e) => setMainQuestStat(e.target.value as RpgStatKey)}
+                        className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                      >
+                        {RPG_STATS.map((s) => (
+                          <option key={s.key} value={s.key}>
+                            {s.icon} {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="space-y-1">
+                        <label className="text-xs text-rpg-text-soft">Niveau requis</label>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          value={mainQuestUnlockLevel}
+                          onChange={(e) => setMainQuestUnlockLevel(Number(e.target.value))}
+                          className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-rpg-text-soft">Bonus XP</label>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          value={mainQuestXpReward}
+                          onChange={(e) => setMainQuestXpReward(Number(e.target.value))}
+                          className="w-full rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" variant="rpg" disabled={savingMainQuest}>
+                      {savingMainQuest
+                        ? "Enregistrement..."
+                        : editingMainQuestId
+                          ? "Enregistrer"
+                          : "Créer la quête principale"}
+                    </Button>
+                  </form>
+
+                  {mainQuests.length > 0 && (
+                    <div className="space-y-2 border-t border-rpg-border pt-3">
+                      {mainQuests
+                        .slice()
+                        .sort((a, b) => a.stat_key.localeCompare(b.stat_key) || a.unlock_level - b.unlock_level)
+                        .map((quest) => {
+                          const stat = RPG_STATS.find((s) => s.key === quest.stat_key);
+                          return (
+                            <div
+                              key={quest.id}
+                              className="flex items-center gap-2 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2 text-sm"
+                            >
+                              <span className="flex min-w-0 flex-1 items-center gap-2 text-rpg-text">
+                                {stat && (
+                                  <RpgStatIcon statKey={stat.key} className="h-4 w-4 shrink-0 text-rpg-gold-dim" />
+                                )}
+                                {quest.title}
+                              </span>
+                              <span className="shrink-0 text-xs text-rpg-text-soft">
+                                Nv. {quest.unlock_level} · +{quest.xp_reward} XP
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditMainQuest(quest)}
+                                aria-label="Modifier cette quête principale"
+                                title="Modifier"
+                                className="shrink-0 text-rpg-text-soft hover:text-rpg-text"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMainQuest(quest)}
+                                aria-label="Supprimer cette quête principale"
+                                title="Supprimer"
+                                className="shrink-0 text-rpg-text-soft hover:text-rpg-danger"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-        </Card>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === "journal" && (
+          <div className="space-y-6">
+            <RpgXpChart dailyXp={dailyXp} monthDays={currentMonthDays} today={today} />
+            <RpgHistorySection
+              dailyXp={dailyXp}
+              monthDays={currentMonthDays}
+              today={today}
+              streak={streak}
+              bestStreak={bestStreak}
+              weekStats={weekStats}
+              monthStats={monthStats}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -600,6 +600,38 @@ plus proche du chrome des menus d'Oblivion :
   CSS (limitation de `shadow-[...]` en classe Tailwind arbitraire), à
   resynchroniser manuellement si `--color-rpg-gold` change à nouveau.
 
+### Refonte structurelle "fiche de personnage" (pas que visuelle)
+Après la palette, retour que l'ensemble ne se sentait toujours pas comme
+une vraie fiche de personnage médiévale-fantasy — besoin de toucher au
+fonctionnement, pas que l'habillage :
+- **`RpgTabs.tsx`** : navigation interne à l'onglet RPG
+  (Personnage/Quêtes/Journal), **distincte** de `NavTabs.tsx` (qui
+  navigue entre les routes Habitudes/Recettes/RPG). `RpgPage.tsx` garde
+  un seul `useEffect` de chargement (quests/logs/mainQuests) et un seul
+  état `activeTab` qui bascule l'affichage entre trois blocs JSX — pas de
+  sous-routes, pas de rechargement de données au changement d'onglet.
+  Répartition : Personnage = portrait + bandeau de niveau + liste de
+  caractéristiques ; Quêtes = quêtes principales + quêtes du jour + les
+  deux panneaux de gestion (repliables, inchangés) ; Journal = graphique
+  XP + historique/série (contenu inchangé, juste déplacé).
+- **`RpgStatPanel.tsx` repensé en rangée, pas en carte** : le niveau
+  devient un gros chiffre (score, façon "Force : 42" dans Oblivion)
+  plutôt qu'une barre de progression en élément principal — la barre XP
+  redescend en détail secondaire, fine, sous le nom. Affichées en liste à
+  deux colonnes dans un seul `Card` (`RpgPage.tsx`), pas en grille de
+  tuiles séparées : plus proche d'un écran de stats que d'un tableau de
+  bord.
+- **`RpgPortrait.tsx`** : médaillon avec silhouette SVG générique
+  (placeholder) + légende (rang). Prend une prop `imageSrc` optionnelle
+  non utilisée pour l'instant : si un vrai portrait est généré plus tard
+  (en dehors de cette session — pas d'outil de génération d'image ici),
+  il suffit de déposer le fichier dans `public/` et de passer son chemin
+  à cette prop, aucune autre modification nécessaire.
+- **Quêtes accomplies barrées** (`line-through italic text-rpg-text-soft`)
+  plutôt que juste un fond doré — lecture "entrée de journal cochée"
+  plutôt que "case à cocher d'application de productivité", sur les
+  quêtes du jour et les quêtes principales.
+
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies
   RLS (`user_id = auth.uid()`) définies dans `supabase/schema.sql`.
