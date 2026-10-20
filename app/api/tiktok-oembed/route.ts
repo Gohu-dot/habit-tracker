@@ -41,7 +41,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       caption,
       thumbnailUrl,
-      debugReason: thumbnailUrl ? null : "Réponse TikTok sans miniature",
+      // Diagnostic temporaire : on ne sait pas encore si thumbnail_url est
+      // absent de la réponse TikTok pour toutes les vidéos ou seulement
+      // certaines (slideshows photo, vidéos privées...) — les clés reçues
+      // permettent de voir si le champ existe sous un autre nom sans avoir
+      // à relire les logs Vercel.
+      debugReason: thumbnailUrl ? null : `Clés reçues de TikTok : ${Object.keys(data).join(", ")}`,
     });
   } catch (err) {
     console.error("Échec de récupération de l'oEmbed TikTok", err);
