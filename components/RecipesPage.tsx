@@ -53,6 +53,10 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [bulkFetching, setBulkFetching] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [bulkSummary, setBulkSummary] = useState<string | null>(null);
+
   const [caption, setCaption] = useState<string | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [captionLoading, setCaptionLoading] = useState(false);
@@ -244,6 +248,48 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
     );
     setSurpriseRecipe((prev) =>
       prev?.id === recipe.id ? { ...prev, thumbnail_url: newThumbnailUrl } : prev
+    );
+  }
+
+  const recipesMissingThumbnail = useMemo(
+    () => recipes.filter((r) => isTikTokUrl(r.url) && !r.thumbnail_url),
+    [recipes]
+  );
+
+  // Traite les recettes une par une plutôt qu'en parallèle : plus poli
+  // vis-à-vis de TikTok (pas de rafale de requêtes simultanées) et plus
+  // simple à suivre visuellement via bulkProgress. Réutilise exactement le
+  // même appel que le bouton par fiche (handleThumbnailRefresh persiste et
+  // met à jour l'état local).
+  async function handleBulkThumbnailFetch() {
+    const targets = recipesMissingThumbnail;
+    if (targets.length === 0) return;
+    setBulkFetching(true);
+    setBulkSummary(null);
+    setBulkProgress({ done: 0, total: targets.length });
+    let succeeded = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const recipe = targets[i];
+      try {
+        const res = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(recipe.url)}`);
+        const data = await res.json();
+        const freshUrl = typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : null;
+        if (freshUrl) {
+          await handleThumbnailRefresh(recipe, freshUrl);
+          succeeded++;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      setBulkProgress({ done: i + 1, total: targets.length });
+      if (i < targets.length - 1) await new Promise((r) => setTimeout(r, 400));
+    }
+    setBulkFetching(false);
+    setBulkProgress(null);
+    setBulkSummary(
+      `${succeeded}/${targets.length} miniature${targets.length > 1 ? "s" : ""} récupérée${
+        succeeded > 1 ? "s" : ""
+      }.`
     );
   }
 
@@ -471,7 +517,22 @@ export default function RecipesPage({ userId }: RecipesPageProps) {
         <span className="text-ink-soft">
           {filteredRecipes.length} recette{filteredRecipes.length > 1 ? "s" : ""}
         </span>
+        {recipesMissingThumbnail.length > 0 && (
+          <button
+            type="button"
+            onClick={handleBulkThumbnailFetch}
+            disabled={bulkFetching}
+            className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50"
+          >
+            {bulkFetching
+              ? `Récupération... (${bulkProgress?.done ?? 0}/${bulkProgress?.total ?? 0})`
+              : `🎬 Récupérer les ${recipesMissingThumbnail.length} miniature${
+                  recipesMissingThumbnail.length > 1 ? "s" : ""
+                } manquante${recipesMissingThumbnail.length > 1 ? "s" : ""}`}
+          </button>
+        )}
       </div>
+      {bulkSummary && <p className="text-sm text-ink-soft">{bulkSummary}</p>}
 
       {surpriseRecipe && (
         <div className="space-y-2">

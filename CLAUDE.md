@@ -235,21 +235,30 @@ connecté (voir `NavTabs.tsx`).
   TikTok a cessé de renvoyer `title`/`thumbnail_url` — il ne renvoie plus
   que des métadonnées techniques (`embed_product_id`, `html`...), un
   changement côté TikTok et non un bug de ce code.
-  `app/api/tiktok-oembed/route.ts` tente donc un repli quand l'oEmbed ne
-  donne ni légende ni miniature : récupérer les balises Open Graph
-  (`og:title`/`og:description`, `og:image`) directement sur la page
-  publique de la vidéo (`fetchOpenGraphFallback`, avec un en-tête
+  `app/api/tiktok-oembed/route.ts` tente donc un repli en deux temps sur
+  une seule page récupérée (`fetchTikTokPageFallback`, avec un en-tête
   `User-Agent` de navigateur — TikTok peut servir une page différente aux
-  clients non reconnus). Ces balises sont celles lues par les aperçus de
-  lien (Facebook, Discord, iMessage...), donc généralement présentes dans
-  le HTML initial même sans exécuter de JavaScript, contrairement au reste
-  du contenu TikTok. `extractMetaContent` fait ce parsing par regex
-  ciblée (balise entière puis `content=`), sans dépendance de parsing
-  HTML — suffisant pour deux balises précises, pas un DOM complet.
+  clients non reconnus) quand l'oEmbed ne donne ni légende ni miniature :
+  (1) les balises Open Graph (`og:title`/`og:description`, `og:image`),
+  celles lues par les aperçus de lien Facebook/Discord/iMessage,
+  normalement présentes sans exécuter de JavaScript ; (2) si absentes
+  (constaté en production : TikTok renvoie une page complète ~400 Ko mais
+  sans balises `og:*` du tout), le bloc JSON d'hydratation que TikTok
+  embarque pour son appli React (`extractJsonStringValue`, clés
+  `cover`/`originCover`/`dynamicCover` pour la miniature, `desc` pour la
+  légende). `extractMetaContent`/`extractJsonStringValue` font ce parsing
+  par regex ciblée, sans dépendance de parsing HTML — suffisant pour
+  quelques clés précises, pas un DOM complet.
   Déclenchement automatique à deux endroits : (1) juste après un partage
   Android si le lien partagé est TikTok, (2) à la perte de focus (`onBlur`)
   du champ lien si elle colle un lien manuellement — `lastFetchedCaptionUrl`
   (un `useRef`) évite de re-déclencher un appel identique à chaque blur.
+  **Récupération groupée** : `RecipesPage.tsx` (`handleBulkThumbnailFetch`)
+  traite en un clic toutes les recettes TikTok sans miniature, une par une
+  (petite pause entre chaque pour rester poli vis-à-vis de TikTok, pas de
+  rafale de requêtes simultanées), avec un compteur de progression et un
+  résumé final — réutilise le même appel que le bouton par fiche, pas de
+  logique dupliquée.
   Testée dans cet environnement seulement avec des URLs non-TikTok et des
   liens TikTok invalides (le réseau sandbox bloque tiktok.com) : le
   comportement de repli (toujours des champs à `null`, jamais d'exception)
