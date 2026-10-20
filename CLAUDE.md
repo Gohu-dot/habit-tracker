@@ -691,15 +691,19 @@ de portrait évolutif par niveau.
   conséquence dans `RpgStatPanel.tsx`/`RpgSectionHeading.tsx`/
   `RpgTabs.tsx`. Pas de règle générale à en tirer : juste "un peu plus
   compact" demandé explicitement, pas une nouvelle convention de densité.
-- **`public/rpg/icons/`** : 5 des 8 icônes de capacités générées par
-  l'utilisateur (chance, endurance, agilité, intelligence, personnalité —
-  force/volonté/rapidité restent sur le glyphe SVG dessiné à la main en
-  attendant). Fournies en 1195×896 avec une bonne marge de fond autour du
-  médaillon carré (pas directement exploitables telles quelles) :
-  recadrées à l'import avec ImageMagick (`convert -fuzz 15% -trim` pour
-  repérer les bords, puis un recadrage uniforme `572x572+318+180` appliqué
-  aux 5 — le fuzz-trim seul n'est pas fiable sur ces images à cause du
-  grain de papier du fond, qui fait illusion de contenu sur les bords).
+- **`public/rpg/icons/`** : les 8 icônes de capacités générées par
+  l'utilisateur (chance, endurance, agilité, intelligence, personnalité,
+  puis rapidité, volonté, force dans un second lot) — le glyphe SVG
+  dessiné à la main (`GLYPHS` dans `RpgStatIcon.tsx`) ne sert donc plus
+  en pratique, mais reste en repli si une entrée de
+  `RPG_STAT_ICON_IMAGES` est un jour retirée. Fournies en 1195×896 avec
+  une bonne marge de fond autour du médaillon carré (pas directement
+  exploitables telles quelles) : recadrées à l'import avec ImageMagick
+  (`convert -fuzz 15% -trim` pour repérer les bords, puis un recadrage
+  uniforme `572x572+318+180` appliqué à tous les lots — le fuzz-trim seul
+  n'est pas fiable sur ces images à cause du grain de papier du fond, qui
+  fait illusion de contenu sur les bords ; vérifié visuellement que ce
+  recadrage uniforme ne coupe aucun des deux lots avant de le fixer).
   `RPG_STAT_ICON_IMAGES` (`RpgStatIcon.tsx`) liste les capacités qui ont
   une icône générée ; `RpgStatIcon` affiche l'image carrée telle quelle
   (cadre déjà peint dedans, même logique que le portrait) si elle existe,

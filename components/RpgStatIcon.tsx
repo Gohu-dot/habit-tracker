@@ -74,6 +74,9 @@ export const RPG_STAT_ICON_IMAGES: Partial<Record<RpgStatKey, string>> = {
   agilite: "/rpg/icons/agilite.png",
   intelligence: "/rpg/icons/intelligence.png",
   personnalite: "/rpg/icons/personnalite.png",
+  rapidite: "/rpg/icons/rapidite.png",
+  volonte: "/rpg/icons/volonte.png",
+  force: "/rpg/icons/force.png",
 };
 
 export default function RpgStatIcon({ statKey, className }: RpgStatIconProps) {
