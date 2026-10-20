@@ -124,13 +124,13 @@
   }
 }
 
-/* Ambiance "vieux grimoire" de l'espace RPG : fond en dégradé radial (lueur
-   de bougie hors-champ, lie-de-vin et or très discrets) + un motif
-   d'étincelles/repères en répétition en très basse opacité, plutôt qu'un
-   simple aplat bg-rpg-bg. Le motif est un SVG inline encodé en base64 (voir
-   le commentaire plus bas pour la source) : aucun fichier image à gérer,
-   couleurs cohérentes avec la palette RPG. Une texture de grain façon cuir
-   (fines diagonales) s'ajoute par-dessus pour la matière.
+/* Ambiance de l'espace RPG : illustration de fond (ruines de château,
+   pixel art généré — voir public/rpg/backgrounds/) plutôt que le dégradé
+   CSS + motif d'étincelles essayés précédemment (superflus une fois une
+   vraie scène disponible : les deux texture systems superposés auraient
+   fait "chargé"). Un dégradé sombre uniforme par-dessus garde le texte et
+   les panneaux lisibles sans masquer la scène ; une lueur dorée discrète
+   en haut rappelle la palette "vieux grimoire" du reste de l'espace.
    Posé sur un wrapper dédié plutôt que sur body pour ne jamais affecter le
    reste du site. */
 .rpg-backdrop {
@@ -140,29 +140,14 @@
   font-family: var(--font-rpg-display);
   background-color: var(--color-rpg-bg);
   background-image:
-    radial-gradient(ellipse 900px 500px at 20% -10%, color-mix(in srgb, var(--color-rpg-accent) 16%, transparent), transparent),
-    radial-gradient(ellipse 700px 500px at 100% 20%, color-mix(in srgb, var(--color-rpg-gold) 9%, transparent), transparent),
-    repeating-linear-gradient(135deg, color-mix(in srgb, black 12%, transparent) 0px, transparent 1px, transparent 5px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIiB2aWV3Qm94PSIwIDAgMTYwIDE2MCI+CiAgPGcgZmlsbD0iI2M5YTIyNyIgZmlsbC1vcGFjaXR5PSIwLjA4Ij4KICAgIDxwYXRoIGQ9Ik0zMCAyMiBMMzMgMzUgTDQ2IDM4IEwzMyA0MSBMMzAgNTQgTDI3IDQxIEwxNCAzOCBMMjcgMzUgWiIvPgogICAgPHBhdGggZD0iTTEyOCA5MCBMMTMwIDk5IEwxMzkgMTAxIEwxMzAgMTAzIEwxMjggMTEyIEwxMjYgMTAzIEwxMTcgMTAxIEwxMjYgOTkgWiIvPgogICAgPHBhdGggZD0iTTU4IDExNiBMNjAgMTIzIEw2NyAxMjUgTDYwIDEyNyBMNTggMTM0IEw1NiAxMjcgTDQ5IDEyNSBMNTYgMTIzIFoiLz4KICA8L2c+CiAgPGcgc3Ryb2tlPSIjN2EyNDFlIiBzdHJva2Utb3BhY2l0eT0iMC4xMiIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIj4KICAgIDxjaXJjbGUgY3g9IjExMiIgY3k9IjI4IiByPSI1Ii8+CiAgICA8cGF0aCBkPSJNMTEyIDIwIEwxMTIgMzYgTTEwNCAyOCBMMTIwIDI4Ii8+CiAgICA8cGF0aCBkPSJNMTggOTggTDI5IDEwOSBNMjkgOTggTDE4IDEwOSIvPgogIDwvZz4KPC9zdmc+");
-  background-repeat: no-repeat, no-repeat, repeat, repeat;
-  background-attachment: fixed, fixed, fixed, fixed;
+    radial-gradient(ellipse 900px 500px at 50% -10%, color-mix(in srgb, var(--color-rpg-gold) 10%, transparent), transparent),
+    linear-gradient(color-mix(in srgb, var(--color-rpg-bg) 55%, transparent), color-mix(in srgb, var(--color-rpg-bg) 55%, transparent)),
+    url("/rpg/backgrounds/ruines-chateau.jpg");
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, cover, cover;
+  background-position: center top, center, center;
+  background-attachment: fixed, fixed, fixed;
 }
-/* Source lisible du motif encodé ci-dessus (3 étincelles dorées +
-   repères lie-de-vin, tuile 160×160), pour pouvoir le modifier sans
-   décoder le base64 :
-   <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
-     <g fill="#c9a227" fill-opacity="0.08">
-       <path d="M30 22 L33 35 L46 38 L33 41 L30 54 L27 41 L14 38 L27 35 Z"/>
-       <path d="M128 90 L130 99 L139 101 L130 103 L128 112 L126 103 L117 101 L126 99 Z"/>
-       <path d="M58 116 L60 123 L67 125 L60 127 L58 134 L56 127 L49 125 L56 123 Z"/>
-     </g>
-     <g stroke="#7a241e" stroke-opacity="0.12" stroke-width="1" fill="none">
-       <circle cx="112" cy="28" r="5"/>
-       <path d="M112 20 L112 36 M104 28 L120 28"/>
-       <path d="M18 98 L29 109 M29 98 L18 109"/>
-     </g>
-   </svg>
-*/
 
 /* Cadre ornemental des panneaux RPG : dégradé de fond + double liseré
    (bordure franche + lueur dorée intérieure très discrète) et petites

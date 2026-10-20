@@ -671,6 +671,18 @@ de portrait évolutif par niveau.
   caractéristique dans `RpgStatPanel.tsx`, numéro de niveau dans le
   bandeau de personnage) : à cette taille de police, Press Start 2P
   déborderait ou passerait à la ligne sur un mot un peu long.
+- **`public/rpg/backgrounds/ruines-chateau.jpg`** : illustration de fond
+  (scène complète, pas une texture tramée) qui remplace le dégradé CSS +
+  motif d'étincelles SVG essayés précédemment sur `.rpg-backdrop`
+  (`globals.css`) — superflus une fois une vraie scène disponible, les
+  deux systèmes de texture superposés auraient fait "chargé". Affichée en
+  `background-size: cover` fixe, avec un dégradé sombre uniforme
+  par-dessus (`color-mix` à 55% d'opacité) pour garder le texte et les
+  panneaux lisibles sans masquer la scène, plus une lueur dorée discrète
+  en haut qui raccorde avec la palette "vieux grimoire" du reste de
+  l'espace. Une seule image pour l'instant ; si plusieurs scènes de fond
+  existent un jour (ex. une par palier de rang, comme les portraits), même
+  logique de palier à prévoir que `portraitForLevel()`.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies
