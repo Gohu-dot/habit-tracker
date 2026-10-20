@@ -61,7 +61,27 @@ const GLYPHS: Record<RpgStatKey, React.ReactNode> = {
   chance: <path d="M6.5 4 V12.5 C6.5 17 9 20 12 20 C15 20 17.5 17 17.5 12.5 V4" />,
 };
 
+// Icônes pixel art générées (public/rpg/icons/), chacune avec son propre
+// cadre ornemental peint dans l'image (recadrage uniforme fait à
+// l'import — voir CLAUDE.md) — même logique que le portrait
+// (RpgPortrait.tsx) : affichées carrées telles quelles, pas de wrapper
+// circulaire CSS par-dessus. Capacités sans icône générée pour l'instant :
+// repli sur le glyphe SVG dessiné à la main (GLYPHS ci-dessus), à
+// remplacer ici à mesure qu'elles sont générées.
+export const RPG_STAT_ICON_IMAGES: Partial<Record<RpgStatKey, string>> = {
+  chance: "/rpg/icons/chance.png",
+  endurance: "/rpg/icons/endurance.png",
+  agilite: "/rpg/icons/agilite.png",
+  intelligence: "/rpg/icons/intelligence.png",
+  personnalite: "/rpg/icons/personnalite.png",
+};
+
 export default function RpgStatIcon({ statKey, className }: RpgStatIconProps) {
+  const imageSrc = RPG_STAT_ICON_IMAGES[statKey];
+  if (imageSrc) {
+    // eslint-disable-next-line @next/next/no-img-element -- icône fournie localement (public/), cadre déjà peint dans l'image
+    return <img src={imageSrc} alt="" className={`rounded-md object-cover ${className ?? ""}`} />;
+  }
   return (
     <svg
       viewBox="0 0 24 24"

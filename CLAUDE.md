@@ -691,6 +691,23 @@ de portrait évolutif par niveau.
   conséquence dans `RpgStatPanel.tsx`/`RpgSectionHeading.tsx`/
   `RpgTabs.tsx`. Pas de règle générale à en tirer : juste "un peu plus
   compact" demandé explicitement, pas une nouvelle convention de densité.
+- **`public/rpg/icons/`** : 5 des 8 icônes de capacités générées par
+  l'utilisateur (chance, endurance, agilité, intelligence, personnalité —
+  force/volonté/rapidité restent sur le glyphe SVG dessiné à la main en
+  attendant). Fournies en 1195×896 avec une bonne marge de fond autour du
+  médaillon carré (pas directement exploitables telles quelles) :
+  recadrées à l'import avec ImageMagick (`convert -fuzz 15% -trim` pour
+  repérer les bords, puis un recadrage uniforme `572x572+318+180` appliqué
+  aux 5 — le fuzz-trim seul n'est pas fiable sur ces images à cause du
+  grain de papier du fond, qui fait illusion de contenu sur les bords).
+  `RPG_STAT_ICON_IMAGES` (`RpgStatIcon.tsx`) liste les capacités qui ont
+  une icône générée ; `RpgStatIcon` affiche l'image carrée telle quelle
+  (cadre déjà peint dedans, même logique que le portrait) si elle existe,
+  sinon le glyphe SVG. `RpgStatPanel.tsx` lit cette même liste pour
+  savoir s'il doit omettre son badge circulaire CSS (utile seulement
+  pour envelopper un glyphe SVG nu, pas une icône déjà encadrée) —
+  ajouter une icône = ajouter une entrée à `RPG_STAT_ICON_IMAGES`, le
+  recadrage éventuel se fait à part avant de déposer le fichier.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies

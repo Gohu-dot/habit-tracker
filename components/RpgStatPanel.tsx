@@ -1,7 +1,7 @@
 "use client";
 
 import { computeLevel, type RpgStat } from "@/lib/rpg";
-import RpgStatIcon from "./RpgStatIcon";
+import RpgStatIcon, { RPG_STAT_ICON_IMAGES } from "./RpgStatIcon";
 
 type RpgStatPanelProps = {
   stat: RpgStat;
@@ -21,12 +21,20 @@ export default function RpgStatPanel({ stat, xp }: RpgStatPanelProps) {
   // Petit coup de pouce visuel quand la capacité est sur le point de
   // monter de niveau, pour donner envie de finir la quête du jour.
   const almostThere = percent >= 85;
+  // Les icônes générées portent déjà leur propre cadre peint (voir
+  // RpgStatIcon.tsx) : pas de badge circulaire CSS par-dessus dans ce
+  // cas, contrairement au repli SVG dessiné à la main qui en a besoin.
+  const hasIconImage = Boolean(RPG_STAT_ICON_IMAGES[stat.key]);
 
   return (
     <div className="flex items-center gap-2.5 py-2">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rpg-gold-dim/60 bg-rpg-bg text-rpg-gold-dim">
-        <RpgStatIcon statKey={stat.key} className="h-4 w-4" />
-      </span>
+      {hasIconImage ? (
+        <RpgStatIcon statKey={stat.key} className="h-8 w-8 shrink-0" />
+      ) : (
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rpg-gold-dim/60 bg-rpg-bg text-rpg-gold-dim">
+          <RpgStatIcon statKey={stat.key} className="h-4 w-4" />
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="font-rpg-display text-sm tracking-wide text-rpg-text">{stat.name}</span>
