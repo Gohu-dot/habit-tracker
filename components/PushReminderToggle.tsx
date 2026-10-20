@@ -91,30 +91,16 @@ export default function PushReminderToggle({ userId, variant = "default" }: Push
     );
   }
 
-  // L'espace RPG garde ses classes manuelles (palette toujours sombre, non
-  // concernée par le passage aux tokens shadcn ci-dessous) ; seule la
-  // variante par défaut adopte le composant Button.
-  const rpgButtonClass =
-    "rounded-md border border-rpg-border bg-rpg-panel px-3 py-1.5 text-sm text-rpg-text-soft hover:text-rpg-text disabled:opacity-50";
+  const buttonVariant = isRpg ? "rpg-outline" : "outline";
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {status === "off" ? (
-        isRpg ? (
-          <button onClick={handleEnable} disabled={busy} className={rpgButtonClass}>
-            🔔 Activer le rappel du soir (19h)
-          </button>
-        ) : (
-          <Button onClick={handleEnable} disabled={busy} variant="outline" size="sm">
-            🔔 Activer le rappel du soir (19h)
-          </Button>
-        )
-      ) : isRpg ? (
-        <button onClick={handleDisable} disabled={busy} className={rpgButtonClass}>
-          🔕 Désactiver le rappel du soir
-        </button>
+        <Button onClick={handleEnable} disabled={busy} variant={buttonVariant} size="sm">
+          🔔 Activer le rappel du soir (19h)
+        </Button>
       ) : (
-        <Button onClick={handleDisable} disabled={busy} variant="outline" size="sm">
+        <Button onClick={handleDisable} disabled={busy} variant={buttonVariant} size="sm">
           🔕 Désactiver le rappel du soir
         </Button>
       )}

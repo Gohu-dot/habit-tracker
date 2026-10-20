@@ -15,8 +15,12 @@ import type { RpgMainQuest, RpgQuest, RpgQuestLog } from "@/lib/types";
 import AppHeader from "./AppHeader";
 import PushReminderToggle from "./PushReminderToggle";
 import RpgHistorySection from "./RpgHistorySection";
+import RpgSectionHeading from "./RpgSectionHeading";
 import RpgStatPanel from "./RpgStatPanel";
 import RpgXpChart from "./RpgXpChart";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
 
 type RpgPageProps = {
   userId: string;
@@ -390,14 +394,14 @@ export default function RpgPage({ userId }: RpgPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-rpg-bg">
+      <div className="rpg-backdrop min-h-screen">
         <p className="p-8 text-rpg-text-soft">Chargement...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-rpg-bg text-rpg-text">
+    <div className="rpg-backdrop min-h-screen text-rpg-text">
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-8">
         <AppHeader userId={userId} variant="rpg" />
 
@@ -409,14 +413,16 @@ export default function RpgPage({ userId }: RpgPageProps) {
 
         <PushReminderToggle userId={userId} variant="rpg" />
 
-        <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
+        <Card variant="rpg" className="p-5">
           <div className="flex items-center justify-between">
-            <p className="text-lg font-semibold text-rpg-text">🏆 Niveau {characterLevel.level}</p>
-            <p className="text-sm text-rpg-text-soft">+{todayXp} XP aujourd&rsquo;hui</p>
+            <p className="font-rpg-display text-xl font-semibold tracking-wide text-rpg-text">
+              🏆 Niveau {characterLevel.level}
+            </p>
+            <Badge variant="rpg">+{todayXp} XP aujourd&rsquo;hui</Badge>
           </div>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-rpg-bg">
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-rpg-bg">
             <div
-              className="h-full rounded-full bg-rpg-purple"
+              className="h-full rounded-full bg-gradient-to-r from-rpg-purple to-rpg-gold"
               style={{
                 width: `${
                   characterLevel.xpForNextLevel > 0
@@ -429,7 +435,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
           <p className="mt-1 text-xs text-rpg-text-soft">
             {characterLevel.xpIntoLevel} / {characterLevel.xpForNextLevel} XP · {totalXp} XP au total
           </p>
-        </div>
+        </Card>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {RPG_STATS.map((stat) => (
@@ -450,8 +456,8 @@ export default function RpgPage({ userId }: RpgPageProps) {
         />
 
         {statsWithMainQuests.length > 0 && (
-          <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
-            <p className="mb-3 text-sm font-medium text-rpg-text">🗺️ Quêtes principales</p>
+          <Card variant="rpg" className="p-4">
+            <RpgSectionHeading>🗺️ Quêtes principales</RpgSectionHeading>
             <div className="space-y-4">
               {statsWithMainQuests.map((stat) => {
                 const chain = mainQuests
@@ -491,21 +497,23 @@ export default function RpgPage({ userId }: RpgPageProps) {
                               </button>
                             ) : unlocked ? (
                               <>
-                                <span className="shrink-0 text-xs font-medium text-rpg-gold">
+                                <Badge variant="rpg" className="shrink-0">
                                   +{quest.xp_reward} XP
-                                </span>
-                                <button
+                                </Badge>
+                                <Button
                                   type="button"
+                                  size="sm"
+                                  variant="rpg"
                                   onClick={() => handleToggleMainQuestComplete(quest)}
-                                  className="shrink-0 rounded-md bg-rpg-gold px-2 py-1 text-xs font-medium text-rpg-bg hover:opacity-90"
+                                  className="shrink-0"
                                 >
                                   Marquer comme accompli
-                                </button>
+                                </Button>
                               </>
                             ) : (
-                              <span className="shrink-0 text-xs text-rpg-text-soft">
+                              <Badge variant="rpg-locked" className="shrink-0">
                                 Niveau {quest.unlock_level} requis
-                              </span>
+                              </Badge>
                             )}
                           </div>
                         );
@@ -515,11 +523,11 @@ export default function RpgPage({ userId }: RpgPageProps) {
                 );
               })}
             </div>
-          </div>
+          </Card>
         )}
 
-        <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
-          <p className="mb-3 text-sm font-medium text-rpg-text">Quêtes du jour</p>
+        <Card variant="rpg" className="p-4">
+          <RpgSectionHeading>⚔️ Quêtes du jour</RpgSectionHeading>
           {quests.length === 0 ? (
             <p className="text-sm text-rpg-text-soft">
               Aucune quête pour l&rsquo;instant — crée-en une dans &laquo;&nbsp;Gérer mes quêtes&nbsp;&raquo;
@@ -533,7 +541,11 @@ export default function RpgPage({ userId }: RpgPageProps) {
                 return (
                   <label
                     key={quest.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-rpg-border bg-rpg-bg px-3 py-2"
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
+                      done
+                        ? "border-rpg-gold/40 bg-rpg-gold/10"
+                        : "border-rpg-border bg-rpg-bg hover:border-rpg-gold-dim/60"
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -544,19 +556,21 @@ export default function RpgPage({ userId }: RpgPageProps) {
                     <span className="min-w-0 flex-1 text-rpg-text">
                       {stat?.icon} {quest.title}
                     </span>
-                    <span className="shrink-0 text-xs font-medium text-rpg-gold">+{quest.xp_value} XP</span>
+                    <Badge variant="rpg" className="shrink-0">
+                      +{quest.xp_value} XP
+                    </Badge>
                   </label>
                 );
               })}
             </div>
           )}
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
+        <Card variant="rpg" className="p-4">
           <button
             type="button"
             onClick={() => setManageOpen((o) => !o)}
-            className="flex w-full items-center justify-between text-sm font-medium text-rpg-text"
+            className="flex w-full items-center justify-between font-rpg-display text-sm font-semibold uppercase tracking-wider text-rpg-gold"
           >
             <span>⚙️ Gérer mes quêtes</span>
             <span className="text-rpg-text-soft">{manageOpen ? "−" : "+"}</span>
@@ -608,13 +622,9 @@ export default function RpgPage({ userId }: RpgPageProps) {
                     className="rounded-md border border-rpg-border bg-rpg-bg px-3 py-2 text-sm text-rpg-text"
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={savingQuest}
-                  className="rounded-md bg-rpg-gold px-4 py-2 text-sm font-medium text-rpg-bg hover:opacity-90 disabled:opacity-50"
-                >
+                <Button type="submit" variant="rpg" disabled={savingQuest}>
                   {savingQuest ? "Enregistrement..." : editingQuestId ? "Enregistrer" : "Créer la quête"}
-                </button>
+                </Button>
               </form>
 
               {quests.length > 0 && (
@@ -655,13 +665,13 @@ export default function RpgPage({ userId }: RpgPageProps) {
               )}
             </div>
           )}
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
+        <Card variant="rpg" className="p-4">
           <button
             type="button"
             onClick={() => setManageMainOpen((o) => !o)}
-            className="flex w-full items-center justify-between text-sm font-medium text-rpg-text"
+            className="flex w-full items-center justify-between font-rpg-display text-sm font-semibold uppercase tracking-wider text-rpg-gold"
           >
             <span>⚙️ Gérer les quêtes principales</span>
             <span className="text-rpg-text-soft">{manageMainOpen ? "−" : "+"}</span>
@@ -727,17 +737,13 @@ export default function RpgPage({ userId }: RpgPageProps) {
                     />
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={savingMainQuest}
-                  className="rounded-md bg-rpg-gold px-4 py-2 text-sm font-medium text-rpg-bg hover:opacity-90 disabled:opacity-50"
-                >
+                <Button type="submit" variant="rpg" disabled={savingMainQuest}>
                   {savingMainQuest
                     ? "Enregistrement..."
                     : editingMainQuestId
                       ? "Enregistrer"
                       : "Créer la quête principale"}
-                </button>
+                </Button>
               </form>
 
               {mainQuests.length > 0 && (
@@ -783,7 +789,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
               )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

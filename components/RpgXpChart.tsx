@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import RpgSectionHeading from "./RpgSectionHeading";
+import { Card } from "./ui/card";
 
 type RpgXpChartProps = {
   dailyXp: Map<string, number>;
@@ -78,8 +80,8 @@ export default function RpgXpChart({ dailyXp, monthDays, today }: RpgXpChartProp
   const hovered = hoverIndex !== null ? points[hoverIndex] : null;
 
   return (
-    <div className="rounded-xl border border-rpg-border bg-rpg-panel p-4">
-      <p className="mb-2 text-sm font-medium text-rpg-text">Progression XP du mois</p>
+    <Card variant="rpg" className="p-4">
+      <RpgSectionHeading>📈 Progression XP du mois</RpgSectionHeading>
 
       <div className="relative">
         <svg
@@ -177,6 +179,6 @@ export default function RpgXpChart({ dailyXp, monthDays, today }: RpgXpChartProp
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,12 +1,22 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+type CardProps = React.HTMLAttributes<HTMLDivElement> & {
+  // "rpg" applique le cadre ornemental de l'espace RPG (.rpg-frame, voir
+  // app/globals.css) au lieu du style carte shadcn par défaut — rien à
+  // voir avec le thème clair/sombre du reste du site, qui ne touche pas
+  // cette variante.
+  variant?: "default" | "rpg";
+};
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant = "default", ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
+        variant === "rpg"
+          ? "rpg-frame rounded-xl text-rpg-text"
+          : "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
         className
       )}
       {...props}

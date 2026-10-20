@@ -455,14 +455,48 @@ lui-même, contrairement au catalogue d'habitudes figé de l'autre espace.
   `--color-ivory`, `--color-sand`, ...). Conséquence : `<Button>`,
   `<Card>`, `<Badge>` suivent automatiquement le thème clair/sombre sans
   code supplémentaire, exactement comme le reste de l'appli.
-- Espace RPG non concerné pour l'instant : il garde ses classes
-  `bg-rpg-*`/`text-rpg-*` écrites à la main (palette toujours sombre, voir
-  plus bas) plutôt que ces primitives — `PushReminderToggle.tsx` illustre
-  le pattern : branche `isRpg` → classes manuelles, branche par défaut →
-  `<Button variant="outline">`.
-- Adopté pour l'instant sur le Dashboard (`HabitCard`, panneau jauge du
-  jour, `PushReminderToggle`) comme pilote ; à étendre à Recettes/RPG si
-  le rendu convient.
+- L'espace RPG utilise ces mêmes composants, mais avec des variantes
+  dédiées (`variant="rpg"` / `"rpg-outline"` sur `Button`, `"rpg"` sur
+  `Card`/`Badge`, `"rpg-locked"` sur `Badge`) plutôt que les variantes
+  `default`/`outline`/`secondary` du reste du site : design nettement plus
+  marqué (voir section "Relooking RPG" ci-dessous), pas juste une palette
+  différente. `PushReminderToggle.tsx` illustre le pattern : un seul
+  `buttonVariant = isRpg ? "rpg-outline" : "outline"`, toujours le même
+  composant `<Button>`.
+- Adopté pour l'instant sur le Dashboard (variantes par défaut :
+  `HabitCard`, panneau jauge du jour, `PushReminderToggle`) et sur tout
+  l'onglet RPG (variantes `rpg`) ; Recettes reste à faire si le rendu
+  convient.
+
+## Relooking RPG (style "dark fantasy" marqué)
+Contrairement au Dashboard (pilote plus sobre, même palette qu'avant), le
+relooking de l'onglet RPG visait un changement visuel net, pas juste une
+consolidation technique :
+- **Police display** : `Cinzel` (Google Font, `app/layout.tsx` →
+  `--font-rpg-cinzel`, exposée à Tailwind sous `--font-rpg-display` dans
+  `@theme inline` de `globals.css`, classe `font-rpg-display`) —
+  réservée aux titres de l'espace RPG (`RpgSectionHeading.tsx`, "Niveau
+  X"), jamais utilisée ailleurs sur le site qui garde Geist partout.
+- **Fond** : `.rpg-frame` et `.rpg-backdrop` (classes utilitaires dans
+  `globals.css`, pas de composant) remplacent le simple `bg-rpg-bg` par
+  un dégradé radial violet/or discret (atmosphère "torche hors-champ") et
+  un cadre de panneau à coins coupés (`clip-path`) + liseré doré
+  intérieur très subtil (`box-shadow inset`), au lieu d'une bordure plate.
+- **Jauges XP/niveau** : dégradé violet→or (`from-rpg-purple to-rpg-gold`)
+  au lieu d'un aplat, et `.rpg-glow` (pulsation lumineuse,
+  `@keyframes rpg-glow-pulse`, respecte `prefers-reduced-motion` comme
+  `.animate-celebrate`) quand une capacité est à ≥85% de son prochain
+  niveau (`RpgStatPanel.tsx`) — un signal visuel "tu y es presque".
+- **`RpgSectionHeading.tsx`** : petit composant partagé (titre en
+  `font-rpg-display` majuscules espacées + `.rpg-rule`, un liseré doré en
+  dégradé) pour ne pas dupliquer ce style sur chaque panneau (quêtes
+  principales, quêtes du jour, historique, graphique XP, gestion...).
+- Nouveaux tokens dans `app/globals.css` : `--color-rpg-panel-deep`
+  (dégradé de fond des panneaux) et `--color-rpg-gold-dim` (liserés/
+  ornements non interactifs, ex. anneau d'icône de capacité dans
+  `RpgStatPanel.tsx`) — toujours **pas** redéfinis sous
+  `[data-theme="dark"]`, l'espace RPG reste insensible au thème
+  clair/sombre du reste du site.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies

@@ -3,6 +3,7 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-rpg-display: var(--font-rpg-cinzel);
 }
 
 /* Volontairement dans un bloc @theme séparé (sans "inline") : Tailwind doit
@@ -57,8 +58,10 @@
      ambiance sombre, indépendamment du choix clair/sombre du reste du site. */
   --color-rpg-bg: #120d1f;
   --color-rpg-panel: #1e1733;
+  --color-rpg-panel-deep: #150f26; /* fond dégradé des panneaux (plus sombre que rpg-panel) */
   --color-rpg-border: #3d2f63;
   --color-rpg-gold: #f2b705;
+  --color-rpg-gold-dim: #8a6a16; /* liserés/ornements dorés discrets (non interactifs) */
   --color-rpg-purple: #8b5cf6;
   --color-rpg-text: #f1ecff;
   --color-rpg-text-soft: #a89bd1;
@@ -108,5 +111,71 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-celebrate {
     animation: none;
+  }
+}
+
+/* Ambiance "dark fantasy" de l'espace RPG : fond en dégradé radial (lueur
+   violette discrète derrière le contenu, comme une torche hors-champ) au
+   lieu d'un simple aplat bg-rpg-bg. Posé sur un wrapper dédié plutôt que
+   sur body pour ne jamais affecter le reste du site. */
+.rpg-backdrop {
+  background-color: var(--color-rpg-bg);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 20% -10%, color-mix(in srgb, var(--color-rpg-purple) 18%, transparent), transparent),
+    radial-gradient(ellipse 700px 500px at 100% 20%, color-mix(in srgb, var(--color-rpg-gold) 8%, transparent), transparent);
+  background-attachment: fixed;
+}
+
+/* Cadre ornemental des panneaux RPG : dégradé de fond + double liseré
+   (bordure franche + lueur dorée intérieure très discrète) et petites
+   amorces de coin façon reliure de grimoire, obtenues en clippant les
+   quatre coins du panneau plutôt qu'avec des images. */
+.rpg-frame {
+  position: relative;
+  background-image: linear-gradient(160deg, var(--color-rpg-panel), var(--color-rpg-panel-deep));
+  border: 1px solid var(--color-rpg-border);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-rpg-gold) 8%, transparent),
+    0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  clip-path: polygon(
+    10px 0%, calc(100% - 10px) 0%, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%,
+    0% calc(100% - 10px), 0% 10px
+  );
+}
+
+/* Liseré doré fin sous les titres de section RPG, façon séparateur de
+   grimoire — un simple dégradé qui s'estompe sur les bords plutôt qu'un
+   trait plein. */
+.rpg-rule {
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-rpg-gold) 50%, transparent) 20%,
+    color-mix(in srgb, var(--color-rpg-gold) 50%, transparent) 80%,
+    transparent
+  );
+}
+
+/* Pulsation douce des barres d'XP/niveau au survol ou à la validation —
+   respecte prefers-reduced-motion comme animate-celebrate plus haut. */
+@keyframes rpg-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px 0 color-mix(in srgb, var(--color-rpg-gold) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 14px 2px color-mix(in srgb, var(--color-rpg-gold) 70%, transparent);
+  }
+}
+
+.rpg-glow {
+  animation: rpg-glow-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpg-glow {
+    animation: none;
+    box-shadow: 0 0 6px 0 color-mix(in srgb, var(--color-rpg-gold) 55%, transparent);
   }
 }

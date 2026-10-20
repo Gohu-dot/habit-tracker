@@ -13,6 +13,12 @@ const buttonVariants = cva(
         ghost: "text-foreground hover:bg-secondary/50",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:opacity-90",
         link: "text-primary underline-offset-4 hover:underline",
+        // Réservée à l'espace RPG : dégradé doré + petites majuscules
+        // espacées façon bouton d'action de jeu, lueur au survol plutôt
+        // qu'un simple hover:opacity-90 comme les autres variantes.
+        rpg: "border border-rpg-gold/40 bg-gradient-to-b from-rpg-gold to-[#c99304] uppercase tracking-wide text-rpg-bg shadow-sm hover:shadow-[0_0_12px_2px_rgba(242,183,5,0.45)]",
+        "rpg-outline":
+          "border border-rpg-border bg-rpg-panel text-rpg-text-soft hover:border-rpg-gold/40 hover:text-rpg-text",
       },
       size: {
         default: "h-9 px-4 py-2",

@@ -3,6 +3,8 @@
 import { mondayIndex } from "@/lib/history";
 import type { RpgRangeStats } from "@/lib/rpgHistory";
 import { nextMilestone, reachedMilestone } from "@/lib/streakMilestones";
+import RpgSectionHeading from "./RpgSectionHeading";
+import { Card } from "./ui/card";
 
 type RpgHistorySectionProps = {
   dailyXp: Map<string, number>;
@@ -45,7 +47,8 @@ export default function RpgHistorySection({
   const upcoming = nextMilestone(streak);
 
   return (
-    <div className="space-y-4 rounded-xl border border-rpg-border bg-rpg-panel p-4">
+    <Card variant="rpg" className="space-y-4 p-4">
+      <RpgSectionHeading>📜 Historique</RpgSectionHeading>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-rpg-text">
@@ -121,6 +124,6 @@ export default function RpgHistorySection({
           })}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
