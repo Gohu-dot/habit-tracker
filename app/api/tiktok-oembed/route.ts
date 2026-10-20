@@ -18,17 +18,42 @@ function extractMetaContent(html: string, key: string): string | null {
   return value ? value.replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'") : null;
 }
 
+// Extrait une valeur de chaîne JSON échappée (ex. "cover":"https:\/\/...")
+// embarquée telle quelle dans le HTML, sans l'isoler dans un objet JSON
+// complet au préalable (le blob d'hydratation de TikTok est un JSON énorme
+// et pas toujours un JSON strictement valide une fois extrait brut — plus
+// simple et plus robuste de cibler juste la paire clé/valeur voulue).
+// JSON.parse sur la valeur ré-encapsulée entre guillemets gère proprement
+// les échappements (\/, \uXXXX, \"...) sans réinventer un dé-échappement.
+function extractJsonStringValue(html: string, key: string): string | null {
+  const regex = new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`);
+  const match = html.match(regex);
+  if (!match) return null;
+  try {
+    const value = JSON.parse(`"${match[1]}"`) as string;
+    return value.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 // Repli quand l'oEmbed ne fournit ni légende ni miniature (voir plus bas) :
-// va chercher les balises Open Graph directement sur la page publique de la
-// vidéo. Ces balises sont celles que lisent les aperçus de lien
-// Facebook/Discord/iMessage, donc généralement présentes dans le HTML
-// initial sans avoir besoin d'exécuter de JavaScript — contrairement au
-// reste du contenu TikTok, rendu côté client.
-async function fetchOpenGraphFallback(
+// va chercher l'info directement sur la page publique de la vidéo, en deux
+// temps sur le même HTML récupéré (une seule requête) :
+//  1. Balises Open Graph (og:title/og:image) — ce que lisent les aperçus de
+//     lien Facebook/Discord/iMessage, normalement présentes sans exécuter
+//     de JavaScript.
+//  2. Repli supplémentaire : le bloc JSON d'hydratation que TikTok embarque
+//     dans la page pour son appli React (clés "cover"/"originCover"/
+//     "dynamicCover" pour la miniature, "desc" pour la légende) — nécessaire
+//     car en production (voir debugReason) TikTok renvoie une page complète
+//     (~400 Ko) mais SANS balises og:* du tout : leurs métadonnées de
+//     partage semblent être passées uniquement par ce JSON désormais.
+async function fetchTikTokPageFallback(
   videoUrl: string
 ): Promise<{ caption: string | null; thumbnailUrl: string | null; debugDetail: string }> {
   const res = await fetch(videoUrl, {
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(8000),
     headers: {
       // Sans en-tête User-Agent "navigateur", TikTok peut servir une page
       // différente (ou bloquer la requête) aux clients non reconnus.
@@ -40,15 +65,29 @@ async function fetchOpenGraphFallback(
     return { caption: null, thumbnailUrl: null, debugDetail: `page HTTP ${res.status}` };
   }
   const html = await res.text();
-  const caption = extractMetaContent(html, "og:title") ?? extractMetaContent(html, "og:description");
-  const thumbnailUrl = extractMetaContent(html, "og:image");
+
+  const ogCaption = extractMetaContent(html, "og:title") ?? extractMetaContent(html, "og:description");
+  const ogThumbnail = extractMetaContent(html, "og:image");
+  if (ogCaption || ogThumbnail) {
+    return {
+      caption: ogCaption,
+      thumbnailUrl: ogThumbnail,
+      debugDetail: `page HTTP ${res.status}, trouvé via Open Graph`,
+    };
+  }
+
+  const jsonThumbnail =
+    extractJsonStringValue(html, "originCover") ??
+    extractJsonStringValue(html, "cover") ??
+    extractJsonStringValue(html, "dynamicCover");
+  const jsonCaption = extractJsonStringValue(html, "desc");
   return {
-    caption,
-    thumbnailUrl,
-    // Diagnostic : la taille de la page reçue distingue un vrai blocage
-    // (page courte, interstitiel captcha/consentement) d'une page complète
-    // qui n'a simplement pas ces balises pour ce contenu précis.
-    debugDetail: `page HTTP ${res.status}, ${html.length} caractères reçus`,
+    caption: jsonCaption,
+    thumbnailUrl: jsonThumbnail,
+    debugDetail:
+      jsonThumbnail || jsonCaption
+        ? `page HTTP ${res.status}, trouvé via le JSON embarqué`
+        : `page HTTP ${res.status}, ${html.length} caractères reçus, rien trouvé (ni og:*, ni JSON embarqué)`,
   };
 }
 
@@ -64,8 +103,9 @@ async function fetchOpenGraphFallback(
 // Constaté en production (voir debugReason affiché dans RecipeCard.tsx) :
 // l'oEmbed de TikTok a cessé de renvoyer title/thumbnail_url (il ne renvoie
 // plus que des métadonnées techniques : embed_product_id, html...) — un
-// changement côté TikTok, pas un bug de ce code. D'où le repli Open Graph
-// ci-dessus, tenté uniquement quand l'oEmbed ne donne ni l'un ni l'autre.
+// changement côté TikTok, pas un bug de ce code. D'où le repli
+// fetchTikTokPageFallback ci-dessus, tenté uniquement quand l'oEmbed ne
+// donne ni l'un ni l'autre.
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
   if (!url || !isTikTokUrl(url)) {
@@ -92,16 +132,16 @@ export async function GET(request: NextRequest) {
 
     if (!caption && !thumbnailUrl) {
       try {
-        const fallback = await fetchOpenGraphFallback(url);
+        const fallback = await fetchTikTokPageFallback(url);
         caption = fallback.caption;
         thumbnailUrl = fallback.thumbnailUrl;
         if (!caption && !thumbnailUrl) {
-          debugReason = `oEmbed et Open Graph sans résultat (${fallback.debugDetail})`;
+          debugReason = `oEmbed sans résultat (${fallback.debugDetail})`;
         }
       } catch (fallbackErr) {
-        console.error("Échec du repli Open Graph TikTok", fallbackErr);
+        console.error("Échec du repli page TikTok", fallbackErr);
         const reason = fallbackErr instanceof Error ? fallbackErr.message : "erreur inconnue";
-        debugReason = `oEmbed sans résultat, repli Open Graph en échec (${reason})`;
+        debugReason = `oEmbed sans résultat, repli page en échec (${reason})`;
       }
     }
 
