@@ -683,6 +683,14 @@ de portrait évolutif par niveau.
   l'espace. Une seule image pour l'instant ; si plusieurs scènes de fond
   existent un jour (ex. une par palier de rang, comme les portraits), même
   logique de palier à prévoir que `portraitForLevel()`.
+- **Composants resserrés** pour laisser voir davantage le fond : conteneur
+  `max-w-5xl` → `max-w-4xl`, padding des `Card` réduit d'un cran
+  (`p-5`→`p-4`, `p-4`→`p-3`), espacements entre sections (`space-y-6` →
+  `space-y-4`), portrait (`h-36/h-40` → `h-28/h-32`), badge-icône de
+  capacité (`h-9 w-9` → `h-8 w-8`) et tailles de police ajustées en
+  conséquence dans `RpgStatPanel.tsx`/`RpgSectionHeading.tsx`/
+  `RpgTabs.tsx`. Pas de règle générale à en tirer : juste "un peu plus
+  compact" demandé explicitement, pas une nouvelle convention de densité.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies

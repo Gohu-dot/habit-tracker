@@ -80,7 +80,7 @@ export default function RpgXpChart({ dailyXp, monthDays, today }: RpgXpChartProp
   const hovered = hoverIndex !== null ? points[hoverIndex] : null;
 
   return (
-    <Card variant="rpg" className="p-4">
+    <Card variant="rpg" className="p-3">
       <RpgSectionHeading>📈 Progression XP du mois</RpgSectionHeading>
 
       <div className="relative">

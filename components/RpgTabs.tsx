@@ -25,7 +25,7 @@ export default function RpgTabs({ active, onChange }: RpgTabsProps) {
             key={tab.key}
             type="button"
             onClick={() => onChange(tab.key)}
-            className={`-mb-px rounded-t-lg border border-b-0 px-4 py-2 font-rpg-display text-sm uppercase tracking-wide transition-colors ${
+            className={`-mb-px rounded-t-lg border border-b-0 px-3 py-1.5 font-rpg-display text-sm uppercase tracking-wide transition-colors ${
               isActive
                 ? "border-rpg-border bg-rpg-panel text-rpg-gold"
                 : "border-transparent text-rpg-text-soft hover:text-rpg-text"

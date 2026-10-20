@@ -23,14 +23,14 @@ export default function RpgStatPanel({ stat, xp }: RpgStatPanelProps) {
   const almostThere = percent >= 85;
 
   return (
-    <div className="flex items-center gap-3 py-2.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-rpg-gold-dim/60 bg-rpg-bg text-rpg-gold-dim">
-        <RpgStatIcon statKey={stat.key} className="h-5 w-5" />
+    <div className="flex items-center gap-2.5 py-2">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rpg-gold-dim/60 bg-rpg-bg text-rpg-gold-dim">
+        <RpgStatIcon statKey={stat.key} className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="font-rpg-display tracking-wide text-rpg-text">{stat.name}</span>
-          <span className="font-rpg-pixel text-lg leading-none text-rpg-gold">{level}</span>
+          <span className="font-rpg-display text-sm tracking-wide text-rpg-text">{stat.name}</span>
+          <span className="font-rpg-pixel text-base leading-none text-rpg-gold">{level}</span>
         </div>
         <div
           className={`mt-1.5 h-1.5 overflow-hidden rounded-full bg-rpg-bg ${almostThere ? "rpg-glow" : ""}`}

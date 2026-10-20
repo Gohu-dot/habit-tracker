@@ -406,7 +406,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
 
   return (
     <div className="rpg-backdrop min-h-screen text-rpg-text">
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-8">
+      <div className="mx-auto max-w-4xl space-y-4 px-4 py-8 sm:px-6">
         <AppHeader userId={userId} variant="rpg" />
 
         {errorMessage && (
@@ -420,8 +420,8 @@ export default function RpgPage({ userId }: RpgPageProps) {
         <RpgTabs active={activeTab} onChange={setActiveTab} />
 
         {activeTab === "personnage" && (
-          <div className="space-y-6">
-            <Card variant="rpg" className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
+          <div className="space-y-4">
+            <Card variant="rpg" className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
               <RpgPortrait
                 title={levelTitle(characterLevel.level)}
                 imageSrc={portraitForLevel(characterLevel.level)}
@@ -461,7 +461,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
               </div>
             </Card>
 
-            <Card variant="rpg" className="p-5">
+            <Card variant="rpg" className="p-3">
               <RpgSectionHeading>Caractéristiques</RpgSectionHeading>
               <div className="divide-y divide-rpg-border/50 sm:grid sm:grid-cols-2 sm:gap-x-8 sm:divide-y-0">
                 {RPG_STATS.map((stat) => (
@@ -473,9 +473,9 @@ export default function RpgPage({ userId }: RpgPageProps) {
         )}
 
         {activeTab === "quetes" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {statsWithMainQuests.length > 0 && (
-              <Card variant="rpg" className="p-4">
+              <Card variant="rpg" className="p-3">
                 <RpgSectionHeading>🗺️ Quêtes principales</RpgSectionHeading>
                 <div className="space-y-4">
                   {statsWithMainQuests.map((stat) => {
@@ -550,7 +550,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
               </Card>
             )}
 
-            <Card variant="rpg" className="p-4">
+            <Card variant="rpg" className="p-3">
               <RpgSectionHeading>⚔️ Quêtes du jour</RpgSectionHeading>
               {quests.length === 0 ? (
                 <p className="text-sm text-rpg-text-soft">
@@ -597,7 +597,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
               )}
             </Card>
 
-            <Card variant="rpg" className="p-4">
+            <Card variant="rpg" className="p-3">
               <button
                 type="button"
                 onClick={() => setManageOpen((o) => !o)}
@@ -701,7 +701,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
               )}
             </Card>
 
-            <Card variant="rpg" className="p-4">
+            <Card variant="rpg" className="p-3">
               <button
                 type="button"
                 onClick={() => setManageMainOpen((o) => !o)}
@@ -831,7 +831,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
         )}
 
         {activeTab === "journal" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <RpgXpChart dailyXp={dailyXp} monthDays={currentMonthDays} today={today} />
             <RpgHistorySection
               dailyXp={dailyXp}

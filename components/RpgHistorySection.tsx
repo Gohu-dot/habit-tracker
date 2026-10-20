@@ -47,7 +47,7 @@ export default function RpgHistorySection({
   const upcoming = nextMilestone(streak);
 
   return (
-    <Card variant="rpg" className="space-y-4 p-4">
+    <Card variant="rpg" className="space-y-3 p-3">
       <RpgSectionHeading>📜 Historique</RpgSectionHeading>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
