@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RECIPE_CATEGORIES, RECIPE_STATUSES, type RecipeStatusKey } from "@/lib/recipes";
+import { RECIPE_CATEGORIES, RECIPE_STATUSES, isTikTokUrl, type RecipeStatusKey } from "@/lib/recipes";
 import type { Recipe } from "@/lib/types";
 
 type RecipeCardProps = {
@@ -29,11 +29,38 @@ export default function RecipeCard({
     RECIPE_CATEGORIES.find((c) => c.key === recipe.category)?.name ?? recipe.category;
   const statusName = RECIPE_STATUSES.find((s) => s.key === recipe.status)?.name ?? recipe.status;
   // Les miniatures viennent du CDN de TikTok, dont les liens signés expirent
-  // avec le temps. Plutôt que de masquer directement une image cassée, on
-  // retente une seule fois une nouvelle miniature via l'oEmbed (voir
-  // fetchTikTokPreview côté parent) avant d'abandonner.
+  // avec le temps : un <img> existant qui casse retente une fois toute
+  // seule (handleThumbnailError). Mais une recette dont thumbnail_url est
+  // resté `null` (ajoutée avant cette fonctionnalité, ou échec silencieux
+  // au moment de l'ajout) n'a pas d'<img> du tout, donc rien ne se
+  // déclenche automatiquement : on propose alors un bouton de récupération
+  // manuelle (fetchFreshThumbnail), utilisable aussi pour réessayer après
+  // un échec.
   const [thumbnailBroken, setThumbnailBroken] = useState(false);
   const [refreshAttempted, setRefreshAttempted] = useState(false);
+  const [fetchingThumbnail, setFetchingThumbnail] = useState(false);
+  const [fetchFailed, setFetchFailed] = useState(false);
+
+  async function fetchFreshThumbnail() {
+    setFetchingThumbnail(true);
+    setFetchFailed(false);
+    try {
+      const res = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(recipe.url)}`);
+      const data = await res.json();
+      const freshUrl = typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : null;
+      if (freshUrl && freshUrl !== recipe.thumbnail_url) {
+        onThumbnailRefresh(freshUrl);
+        setThumbnailBroken(false);
+      } else {
+        setFetchFailed(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setFetchFailed(true);
+    } finally {
+      setFetchingThumbnail(false);
+    }
+  }
 
   async function handleThumbnailError() {
     if (refreshAttempted) {
@@ -41,25 +68,12 @@ export default function RecipeCard({
       return;
     }
     setRefreshAttempted(true);
-    try {
-      const res = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(recipe.url)}`);
-      const data = await res.json();
-      const freshUrl = typeof data.thumbnailUrl === "string" ? data.thumbnailUrl : null;
-      if (freshUrl && freshUrl !== recipe.thumbnail_url) {
-        onThumbnailRefresh(freshUrl);
-      } else {
-        onThumbnailRefresh(null);
-        setThumbnailBroken(true);
-      }
-    } catch (err) {
-      console.error(err);
-      setThumbnailBroken(true);
-    }
+    await fetchFreshThumbnail();
   }
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-sand bg-ivory shadow-sm">
-      {recipe.thumbnail_url && !thumbnailBroken && (
+      {recipe.thumbnail_url && !thumbnailBroken ? (
         // eslint-disable-next-line @next/next/no-img-element -- image hébergée sur le CDN de TikTok, non listable dans next/image
         <img
           src={recipe.thumbnail_url}
@@ -67,6 +81,21 @@ export default function RecipeCard({
           onError={handleThumbnailError}
           className="h-40 w-full object-cover"
         />
+      ) : (
+        isTikTokUrl(recipe.url) && (
+          <button
+            type="button"
+            onClick={fetchFreshThumbnail}
+            disabled={fetchingThumbnail}
+            className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-sand/40 text-xs text-ink-soft hover:bg-sand/60 disabled:opacity-60"
+          >
+            {fetchingThumbnail
+              ? "Récupération..."
+              : fetchFailed
+                ? "⚠️ Échec — réessayer"
+                : "🎬 Récupérer la miniature"}
+          </button>
+        )
       )}
 
       <div className="flex flex-col gap-2 p-4">
