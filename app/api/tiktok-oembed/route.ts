@@ -26,7 +26,7 @@ function extractMetaContent(html: string, key: string): string | null {
 // reste du contenu TikTok, rendu côté client.
 async function fetchOpenGraphFallback(
   videoUrl: string
-): Promise<{ caption: string | null; thumbnailUrl: string | null }> {
+): Promise<{ caption: string | null; thumbnailUrl: string | null; debugDetail: string }> {
   const res = await fetch(videoUrl, {
     signal: AbortSignal.timeout(5000),
     headers: {
@@ -36,11 +36,19 @@ async function fetchOpenGraphFallback(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     },
   });
-  if (!res.ok) return { caption: null, thumbnailUrl: null };
+  if (!res.ok) {
+    return { caption: null, thumbnailUrl: null, debugDetail: `page HTTP ${res.status}` };
+  }
   const html = await res.text();
+  const caption = extractMetaContent(html, "og:title") ?? extractMetaContent(html, "og:description");
+  const thumbnailUrl = extractMetaContent(html, "og:image");
   return {
-    caption: extractMetaContent(html, "og:title") ?? extractMetaContent(html, "og:description"),
-    thumbnailUrl: extractMetaContent(html, "og:image"),
+    caption,
+    thumbnailUrl,
+    // Diagnostic : la taille de la page reçue distingue un vrai blocage
+    // (page courte, interstitiel captcha/consentement) d'une page complète
+    // qui n'a simplement pas ces balises pour ce contenu précis.
+    debugDetail: `page HTTP ${res.status}, ${html.length} caractères reçus`,
   };
 }
 
@@ -88,11 +96,12 @@ export async function GET(request: NextRequest) {
         caption = fallback.caption;
         thumbnailUrl = fallback.thumbnailUrl;
         if (!caption && !thumbnailUrl) {
-          debugReason = "oEmbed et Open Graph tous deux sans résultat";
+          debugReason = `oEmbed et Open Graph sans résultat (${fallback.debugDetail})`;
         }
       } catch (fallbackErr) {
         console.error("Échec du repli Open Graph TikTok", fallbackErr);
-        debugReason = "oEmbed sans résultat, repli Open Graph en échec";
+        const reason = fallbackErr instanceof Error ? fallbackErr.message : "erreur inconnue";
+        debugReason = `oEmbed sans résultat, repli Open Graph en échec (${reason})`;
       }
     }
 
