@@ -496,6 +496,15 @@ consolidation technique :
   un dégradé radial violet/or discret (atmosphère "torche hors-champ") et
   un cadre de panneau à coins coupés (`clip-path`) + liseré doré
   intérieur très subtil (`box-shadow inset`), au lieu d'une bordure plate.
+  `.rpg-backdrop` superpose aussi un motif SVG en répétition (étincelles
+  dorées + repères boussole violets, tuile 160×160, opacité ~0.07-0.09) —
+  encodé en base64 dans `background-image` (3ᵉ couche, après les deux
+  dégradés radiaux), avec la source SVG lisible en commentaire juste
+  après dans `globals.css` pour pouvoir la modifier sans décoder le
+  base64. Choisi plutôt qu'une illustration unique ou une texture externe
+  (pas d'outil de génération d'image disponible, et une image externe
+  pose des questions de licence) : 100% vectoriel, aucun fichier à
+  gérer, cohérent avec le reste dessiné à la main.
 - **Jauges XP/niveau** : dégradé violet→or (`from-rpg-purple to-rpg-gold`)
   au lieu d'un aplat, et `.rpg-glow` (pulsation lumineuse,
   `@keyframes rpg-glow-pulse`, respecte `prefers-reduced-motion` comme
