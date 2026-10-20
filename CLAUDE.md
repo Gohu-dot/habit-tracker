@@ -222,16 +222,30 @@ connecté (voir `NavTabs.tsx`).
   que `next/image`, pour ne pas avoir à lister tous les sous-domaines du
   CDN TikTok dans `next.config`) et la légende reste dans un `<details>`
   repliable en dessous.
-  **Miniatures auto-réparées** : `thumbnail_url` est un lien signé du CDN
-  TikTok qui expire après un moment (observé en production : les
-  miniatures disparaissaient progressivement sur les recettes plus
-  anciennes). Plutôt que de simplement masquer l'image cassée,
+  **Miniatures auto-réparées + repli Open Graph** : `thumbnail_url` est un
+  lien signé du CDN TikTok qui peut expirer avec le temps.
   `RecipeCard.tsx` (`handleThumbnailError`, déclenché par l'`onError` de
-  l'`<img>`) redemande l'oEmbed TikTok pour cette recette afin d'obtenir
-  une URL fraîche, puis `RecipesPage.tsx` (`handleThumbnailRefresh`) la
-  persiste en base — auto-guérison silencieuse à chaque affichage d'une
-  miniature expirée, une seule tentative par affichage (`refreshAttempted`)
-  pour ne pas boucler si l'oEmbed échoue aussi.
+  l'`<img>`) redemande alors l'oEmbed TikTok pour obtenir une URL fraîche,
+  et `RecipesPage.tsx` (`handleThumbnailRefresh`) la persiste en base.
+  Pour une recette dont `thumbnail_url` est resté `null` (pas d'`<img>`
+  donc rien ne se déclenche tout seul), un bouton "🎬 Récupérer la
+  miniature" permet de déclencher la même tentative manuellement.
+  **Cause racine identifiée en production** (via le champ `debugReason` de
+  la route, affiché sur la fiche en cas d'échec) : l'oEmbed public de
+  TikTok a cessé de renvoyer `title`/`thumbnail_url` — il ne renvoie plus
+  que des métadonnées techniques (`embed_product_id`, `html`...), un
+  changement côté TikTok et non un bug de ce code.
+  `app/api/tiktok-oembed/route.ts` tente donc un repli quand l'oEmbed ne
+  donne ni légende ni miniature : récupérer les balises Open Graph
+  (`og:title`/`og:description`, `og:image`) directement sur la page
+  publique de la vidéo (`fetchOpenGraphFallback`, avec un en-tête
+  `User-Agent` de navigateur — TikTok peut servir une page différente aux
+  clients non reconnus). Ces balises sont celles lues par les aperçus de
+  lien (Facebook, Discord, iMessage...), donc généralement présentes dans
+  le HTML initial même sans exécuter de JavaScript, contrairement au reste
+  du contenu TikTok. `extractMetaContent` fait ce parsing par regex
+  ciblée (balise entière puis `content=`), sans dépendance de parsing
+  HTML — suffisant pour deux balises précises, pas un DOM complet.
   Déclenchement automatique à deux endroits : (1) juste après un partage
   Android si le lien partagé est TikTok, (2) à la perte de focus (`onBlur`)
   du champ lien si elle colle un lien manuellement — `lastFetchedCaptionUrl`
