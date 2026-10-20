@@ -32,7 +32,7 @@ export default function RpgStatPanel({ stat, xp }: RpgStatPanelProps) {
         className={`mt-3 h-2 overflow-hidden rounded-full bg-rpg-bg ${almostThere ? "rpg-glow" : ""}`}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-rpg-purple to-rpg-gold"
+          className="h-full rounded-full bg-gradient-to-r from-rpg-accent to-rpg-gold"
           style={{ width: `${percent}%` }}
         />
       </div>

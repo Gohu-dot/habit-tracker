@@ -431,7 +431,7 @@ export default function RpgPage({ userId }: RpgPageProps) {
           </div>
           <div className="mt-3 h-3 overflow-hidden rounded-full bg-rpg-bg">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-rpg-purple to-rpg-gold"
+              className="h-full rounded-full bg-gradient-to-r from-rpg-accent to-rpg-gold"
               style={{
                 width: `${
                   characterLevel.xpForNextLevel > 0

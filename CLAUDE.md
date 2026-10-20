@@ -502,20 +502,21 @@ consolidation technique :
   X"), jamais utilisée ailleurs sur le site qui garde Geist partout.
 - **Fond** : `.rpg-frame` et `.rpg-backdrop` (classes utilitaires dans
   `globals.css`, pas de composant) remplacent le simple `bg-rpg-bg` par
-  un dégradé radial violet/or discret (atmosphère "torche hors-champ") et
+  un dégradé radial discret (atmosphère "lueur de bougie hors-champ") et
   un cadre de panneau à coins coupés (`clip-path`) + liseré doré
   intérieur très subtil (`box-shadow inset`), au lieu d'une bordure plate.
   `.rpg-backdrop` superpose aussi un motif SVG en répétition (étincelles
-  dorées + repères boussole violets, tuile 160×160, opacité ~0.07-0.09) —
-  encodé en base64 dans `background-image` (3ᵉ couche, après les deux
-  dégradés radiaux), avec la source SVG lisible en commentaire juste
-  après dans `globals.css` pour pouvoir la modifier sans décoder le
-  base64. Choisi plutôt qu'une illustration unique ou une texture externe
-  (pas d'outil de génération d'image disponible, et une image externe
-  pose des questions de licence) : 100% vectoriel, aucun fichier à
-  gérer, cohérent avec le reste dessiné à la main.
-- **Jauges XP/niveau** : dégradé violet→or (`from-rpg-purple to-rpg-gold`)
-  au lieu d'un aplat, et `.rpg-glow` (pulsation lumineuse,
+  dorées + repères lie-de-vin, tuile 160×160, opacité ~0.08-0.12) —
+  encodé en base64 dans `background-image`, avec la source SVG lisible en
+  commentaire juste après dans `globals.css` pour pouvoir la modifier sans
+  décoder le base64. Choisi plutôt qu'une illustration unique ou une
+  texture externe (pas d'outil de génération d'image disponible, et une
+  image externe pose des questions de licence) : 100% vectoriel, aucun
+  fichier à gérer, cohérent avec le reste dessiné à la main. (Couleurs
+  d'origine : violet/or — voir "Palette Oblivion" plus bas pour la
+  bascule vers lie-de-vin/bronze.)
+- **Jauges XP/niveau** : dégradé lie-de-vin→or (`from-rpg-accent
+  to-rpg-gold`) au lieu d'un aplat, et `.rpg-glow` (pulsation lumineuse,
   `@keyframes rpg-glow-pulse`, respecte `prefers-reduced-motion` comme
   `.animate-celebrate`) quand une capacité est à ≥85% de son prochain
   niveau (`RpgStatPanel.tsx`) — un signal visuel "tu y es presque".
@@ -560,6 +561,44 @@ générique :
   texte de l'espace RPG en hérite par défaut — les titres explicites
   (`font-rpg-display`, Cinzel) le redéfinissent localement. Jamais
   utilisée hors de l'espace RPG, même logique que Cinzel.
+
+### Palette Oblivion (lie-de-vin/bronze/parchemin)
+Après validation du style ci-dessus, demande explicite d'aller plus loin
+"quitte à changer les couleurs et tout ce qui va avec" — la palette
+violet/or d'origine (ambiance "magie cosmique" générique) a été
+remplacée par des teintes évoquant une reliure en cuir/un vieux grimoire,
+plus proche du chrome des menus d'Oblivion :
+- `--color-rpg-bg`/`--color-rpg-panel`/`--color-rpg-panel-deep` : bruns
+  cuir foncés (`#140d08`/`#2b1d12`/`#1c130b`) au lieu du bleu-violet
+  sombre d'origine.
+- `--color-rpg-border`/`--color-rpg-gold-dim` : bronze/laiton vieilli
+  (`#5c4328`/`#7a5a1e`) au lieu de violet/or vifs.
+- `--color-rpg-gold` : or plus mat/antique (`#c9a227`, contre `#f2b705`
+  avant) — tous les dégradés et lueurs qui en dépendent (`.rpg-glow`,
+  jauges, `RpgXpChart.tsx` via `var(--color-rpg-gold)`) suivent
+  automatiquement, aucune valeur à dupliquer ailleurs.
+- `--color-rpg-purple` **renommé** `--color-rpg-accent` (pas juste
+  recoloré : le nom "purple" aurait été trompeur avec une valeur
+  lie-de-vin `#7a241e`) — a nécessité de mettre à jour les 3 endroits qui
+  le référençaient par classe Tailwind (`from-rpg-purple`/`ring-rpg-purple`
+  dans `RpgStatPanel.tsx`, `RpgHistorySection.tsx`, `RpgPage.tsx`) en
+  `-accent`. Tout nouvel usage de ce second accent doit utiliser
+  `rpg-accent`, pas réintroduire "purple".
+- `--color-rpg-text`/`--color-rpg-text-soft`/`--color-rpg-danger` :
+  réchauffés vers crème parchemin/brun tabac/rouge brique plutôt que les
+  teintes froides d'origine.
+- Motif de fond (voir plus haut) recoloré à l'identique (même SVG,
+  mêmes positions) avec les nouvelles couleurs — seule la palette change.
+- **Nouveau** : une texture de grain façon cuir (`repeating-linear-gradient`
+  diagonal, noir à 12% d'opacité, posé en 3ᵉ couche de
+  `background-image` sur `.rpg-backdrop`, avant le motif SVG) — pure
+  matière, aucune dépendance supplémentaire.
+- Les couleurs codées en dur dans `components/ui/button.tsx` (variante
+  `rpg`, dégradé + lueur au survol) ont été recalculées à la main pour
+  rester cohérentes avec le nouvel or (`#8f6f1c`, `rgba(201,162,39,...)`)
+  — ce sont les deux seules valeurs RPG qui ne passent pas par un token
+  CSS (limitation de `shadow-[...]` en classe Tailwind arbitraire), à
+  resynchroniser manuellement si `--color-rpg-gold` change à nouveau.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies

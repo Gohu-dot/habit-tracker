@@ -115,7 +115,7 @@ export default function RpgHistorySection({
                 key={day}
                 title={isFuture ? dayLabel(day) : `${dayLabel(day)} : ${xp} XP`}
                 className={`flex aspect-square items-center justify-center rounded-md text-sm ${fillClass} ${
-                  isToday ? "ring-2 ring-rpg-purple ring-offset-1 ring-offset-rpg-panel" : ""
+                  isToday ? "ring-2 ring-rpg-accent ring-offset-1 ring-offset-rpg-panel" : ""
                 }`}
               >
                 {dayNumber}

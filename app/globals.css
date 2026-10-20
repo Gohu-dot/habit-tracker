@@ -54,19 +54,22 @@
   --color-destructive-foreground: #ffffff;
   --radius: 0.75rem;
 
-  /* Palette RPG (espace dédié, dark fantasy) : volontairement PAS redéfinie
-     sous [data-theme="dark"] plus bas — cet espace garde toujours la même
-     ambiance sombre, indépendamment du choix clair/sombre du reste du site. */
-  --color-rpg-bg: #120d1f;
-  --color-rpg-panel: #1e1733;
-  --color-rpg-panel-deep: #150f26; /* fond dégradé des panneaux (plus sombre que rpg-panel) */
-  --color-rpg-border: #3d2f63;
-  --color-rpg-gold: #f2b705;
-  --color-rpg-gold-dim: #8a6a16; /* liserés/ornements dorés discrets (non interactifs) */
-  --color-rpg-purple: #8b5cf6;
-  --color-rpg-text: #f1ecff;
-  --color-rpg-text-soft: #a89bd1;
-  --color-rpg-danger: #ff6b6b;
+  /* Palette RPG (espace dédié) : volontairement PAS redéfinie sous
+     [data-theme="dark"] plus bas — cet espace garde toujours la même
+     ambiance sombre, indépendamment du choix clair/sombre du reste du site.
+     Repensée pour évoquer un vieux grimoire/une reliure en cuir (parchemin,
+     bronze, lie-de-vin) plutôt qu'une fantasy "magie cosmique" générique —
+     voir "Rapprochement visuel d'Oblivion" dans CLAUDE.md. */
+  --color-rpg-bg: #140d08;
+  --color-rpg-panel: #2b1d12;
+  --color-rpg-panel-deep: #1c130b; /* fond dégradé des panneaux (plus sombre que rpg-panel) */
+  --color-rpg-border: #5c4328;
+  --color-rpg-gold: #c9a227;
+  --color-rpg-gold-dim: #7a5a1e; /* liserés/ornements dorés discrets (non interactifs) */
+  --color-rpg-accent: #7a241e; /* lie-de-vin : second accent, remplace l'ancien violet */
+  --color-rpg-text: #ecdfc2;
+  --color-rpg-text-soft: #b3987a;
+  --color-rpg-danger: #e0574a;
 }
 
 /* Thème sombre : mêmes rôles de couleur, valeurs inversées. Les classes
@@ -115,12 +118,13 @@
   }
 }
 
-/* Ambiance "dark fantasy" de l'espace RPG : fond en dégradé radial (lueur
-   violette discrète derrière le contenu, comme une torche hors-champ) +
-   un motif d'étincelles/repères de boussole en répétition, en très basse
-   opacité, plutôt qu'un simple aplat bg-rpg-bg. Le motif est un SVG inline
-   encodé en base64 (voir le commentaire plus bas pour la source) : aucun
-   fichier image à gérer, couleurs cohérentes avec la palette RPG.
+/* Ambiance "vieux grimoire" de l'espace RPG : fond en dégradé radial (lueur
+   de bougie hors-champ, lie-de-vin et or très discrets) + un motif
+   d'étincelles/repères en répétition en très basse opacité, plutôt qu'un
+   simple aplat bg-rpg-bg. Le motif est un SVG inline encodé en base64 (voir
+   le commentaire plus bas pour la source) : aucun fichier image à gérer,
+   couleurs cohérentes avec la palette RPG. Une texture de grain façon cuir
+   (fines diagonales) s'ajoute par-dessus pour la matière.
    Posé sur un wrapper dédié plutôt que sur body pour ne jamais affecter le
    reste du site. */
 .rpg-backdrop {
@@ -131,22 +135,23 @@
   font-family: var(--font-rpg-serif);
   background-color: var(--color-rpg-bg);
   background-image:
-    radial-gradient(ellipse 900px 500px at 20% -10%, color-mix(in srgb, var(--color-rpg-purple) 18%, transparent), transparent),
-    radial-gradient(ellipse 700px 500px at 100% 20%, color-mix(in srgb, var(--color-rpg-gold) 8%, transparent), transparent),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIiB2aWV3Qm94PSIwIDAgMTYwIDE2MCI+CiAgPGcgZmlsbD0iI2YyYjcwNSIgZmlsbC1vcGFjaXR5PSIwLjA3Ij4KICAgIDxwYXRoIGQ9Ik0zMCAyMiBMMzMgMzUgTDQ2IDM4IEwzMyA0MSBMMzAgNTQgTDI3IDQxIEwxNCAzOCBMMjcgMzUgWiIvPgogICAgPHBhdGggZD0iTTEyOCA5MCBMMTMwIDk5IEwxMzkgMTAxIEwxMzAgMTAzIEwxMjggMTEyIEwxMjYgMTAzIEwxMTcgMTAxIEwxMjYgOTkgWiIvPgogICAgPHBhdGggZD0iTTU4IDExNiBMNjAgMTIzIEw2NyAxMjUgTDYwIDEyNyBMNTggMTM0IEw1NiAxMjcgTDQ5IDEyNSBMNTYgMTIzIFoiLz4KICA8L2c+CiAgPGcgc3Ryb2tlPSIjOGI1Y2Y2IiBzdHJva2Utb3BhY2l0eT0iMC4wOSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIj4KICAgIDxjaXJjbGUgY3g9IjExMiIgY3k9IjI4IiByPSI1Ii8+CiAgICA8cGF0aCBkPSJNMTEyIDIwIEwxMTIgMzYgTTEwNCAyOCBMMTIwIDI4Ii8+CiAgICA8cGF0aCBkPSJNMTggOTggTDI5IDEwOSBNMjkgOTggTDE4IDEwOSIvPgogIDwvZz4KPC9zdmc+");
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-attachment: fixed, fixed, fixed;
+    radial-gradient(ellipse 900px 500px at 20% -10%, color-mix(in srgb, var(--color-rpg-accent) 16%, transparent), transparent),
+    radial-gradient(ellipse 700px 500px at 100% 20%, color-mix(in srgb, var(--color-rpg-gold) 9%, transparent), transparent),
+    repeating-linear-gradient(135deg, color-mix(in srgb, black 12%, transparent) 0px, transparent 1px, transparent 5px),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIiB2aWV3Qm94PSIwIDAgMTYwIDE2MCI+CiAgPGcgZmlsbD0iI2M5YTIyNyIgZmlsbC1vcGFjaXR5PSIwLjA4Ij4KICAgIDxwYXRoIGQ9Ik0zMCAyMiBMMzMgMzUgTDQ2IDM4IEwzMyA0MSBMMzAgNTQgTDI3IDQxIEwxNCAzOCBMMjcgMzUgWiIvPgogICAgPHBhdGggZD0iTTEyOCA5MCBMMTMwIDk5IEwxMzkgMTAxIEwxMzAgMTAzIEwxMjggMTEyIEwxMjYgMTAzIEwxMTcgMTAxIEwxMjYgOTkgWiIvPgogICAgPHBhdGggZD0iTTU4IDExNiBMNjAgMTIzIEw2NyAxMjUgTDYwIDEyNyBMNTggMTM0IEw1NiAxMjcgTDQ5IDEyNSBMNTYgMTIzIFoiLz4KICA8L2c+CiAgPGcgc3Ryb2tlPSIjN2EyNDFlIiBzdHJva2Utb3BhY2l0eT0iMC4xMiIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIj4KICAgIDxjaXJjbGUgY3g9IjExMiIgY3k9IjI4IiByPSI1Ii8+CiAgICA8cGF0aCBkPSJNMTEyIDIwIEwxMTIgMzYgTTEwNCAyOCBMMTIwIDI4Ii8+CiAgICA8cGF0aCBkPSJNMTggOTggTDI5IDEwOSBNMjkgOTggTDE4IDEwOSIvPgogIDwvZz4KPC9zdmc+");
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  background-attachment: fixed, fixed, fixed, fixed;
 }
 /* Source lisible du motif encodé ci-dessus (3 étincelles dorées +
-   repères boussole violets, tuile 160×160), pour pouvoir le modifier sans
+   repères lie-de-vin, tuile 160×160), pour pouvoir le modifier sans
    décoder le base64 :
    <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
-     <g fill="#f2b705" fill-opacity="0.07">
+     <g fill="#c9a227" fill-opacity="0.08">
        <path d="M30 22 L33 35 L46 38 L33 41 L30 54 L27 41 L14 38 L27 35 Z"/>
        <path d="M128 90 L130 99 L139 101 L130 103 L128 112 L126 103 L117 101 L126 99 Z"/>
        <path d="M58 116 L60 123 L67 125 L60 127 L58 134 L56 127 L49 125 L56 123 Z"/>
      </g>
-     <g stroke="#8b5cf6" stroke-opacity="0.09" stroke-width="1" fill="none">
+     <g stroke="#7a241e" stroke-opacity="0.12" stroke-width="1" fill="none">
        <circle cx="112" cy="28" r="5"/>
        <path d="M112 20 L112 36 M104 28 L120 28"/>
        <path d="M18 98 L29 109 M29 98 L18 109"/>
