@@ -40,10 +40,16 @@ export default function RecipeCard({
   const [refreshAttempted, setRefreshAttempted] = useState(false);
   const [fetchingThumbnail, setFetchingThumbnail] = useState(false);
   const [fetchFailed, setFetchFailed] = useState(false);
+  // Affiché directement sur la fiche en cas d'échec (voir debugReason dans
+  // app/api/tiktok-oembed/route.ts) pour diagnostiquer sans outils de
+  // développeur : ni TikTok ni Vercel ne sont joignables depuis
+  // l'environnement où ce projet est développé.
+  const [fetchDebugReason, setFetchDebugReason] = useState<string | null>(null);
 
   async function fetchFreshThumbnail() {
     setFetchingThumbnail(true);
     setFetchFailed(false);
+    setFetchDebugReason(null);
     try {
       const res = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(recipe.url)}`);
       const data = await res.json();
@@ -53,10 +59,12 @@ export default function RecipeCard({
         setThumbnailBroken(false);
       } else {
         setFetchFailed(true);
+        setFetchDebugReason(typeof data.debugReason === "string" ? data.debugReason : null);
       }
     } catch (err) {
       console.error(err);
       setFetchFailed(true);
+      setFetchDebugReason(err instanceof Error ? err.message : null);
     } finally {
       setFetchingThumbnail(false);
     }
@@ -87,13 +95,16 @@ export default function RecipeCard({
             type="button"
             onClick={fetchFreshThumbnail}
             disabled={fetchingThumbnail}
-            className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-sand/40 text-xs text-ink-soft hover:bg-sand/60 disabled:opacity-60"
+            className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-sand/40 px-3 text-center text-xs text-ink-soft hover:bg-sand/60 disabled:opacity-60"
           >
             {fetchingThumbnail
               ? "Récupération..."
               : fetchFailed
                 ? "⚠️ Échec — réessayer"
                 : "🎬 Récupérer la miniature"}
+            {fetchFailed && fetchDebugReason && (
+              <span className="text-[10px] text-ink-soft/80">({fetchDebugReason})</span>
+            )}
           </button>
         )
       )}

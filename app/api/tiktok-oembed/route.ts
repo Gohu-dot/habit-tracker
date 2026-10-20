@@ -14,14 +14,23 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
   if (!url || !isTikTokUrl(url)) {
-    return NextResponse.json({ caption: null, thumbnailUrl: null });
+    return NextResponse.json({ caption: null, thumbnailUrl: null, debugReason: null });
   }
 
   try {
     const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
     const res = await fetch(oembedUrl, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) {
-      return NextResponse.json({ caption: null, thumbnailUrl: null });
+      // debugReason n'est là que pour afficher un indice côté client (voir
+      // RecipeCard.tsx) quand la récupération échoue en production — on ne
+      // peut pas reproduire d'appel réel à TikTok depuis l'environnement de
+      // dev de ce projet (réseau sandbox bloqué), donc ce champ est le seul
+      // moyen de diagnostiquer sans accès aux logs Vercel.
+      return NextResponse.json({
+        caption: null,
+        thumbnailUrl: null,
+        debugReason: `TikTok a répondu ${res.status}`,
+      });
     }
     const data = (await res.json()) as { title?: unknown; thumbnail_url?: unknown };
     const caption = typeof data.title === "string" && data.title.trim() ? data.title.trim() : null;
@@ -29,9 +38,14 @@ export async function GET(request: NextRequest) {
       typeof data.thumbnail_url === "string" && data.thumbnail_url.trim()
         ? data.thumbnail_url.trim()
         : null;
-    return NextResponse.json({ caption, thumbnailUrl });
+    return NextResponse.json({
+      caption,
+      thumbnailUrl,
+      debugReason: thumbnailUrl ? null : "Réponse TikTok sans miniature",
+    });
   } catch (err) {
     console.error("Échec de récupération de l'oEmbed TikTok", err);
-    return NextResponse.json({ caption: null, thumbnailUrl: null });
+    const reason = err instanceof Error ? `${err.name}: ${err.message}` : "Erreur inconnue";
+    return NextResponse.json({ caption: null, thumbnailUrl: null, debugReason: reason });
   }
 }
