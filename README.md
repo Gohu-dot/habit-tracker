@@ -258,7 +258,8 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   liste** permet de coller le classement en une fois (un film par ligne,
   numéroté ou non, avec ou sans année) : recoller la liste plus tard pour
   corriger un titre met à jour l'info sans effacer ce qui a déjà été vu ou
-  noté.
+  noté. Fond d'écran dédié (ciné drive-in de nuit), qui s'adapte
+  automatiquement au thème clair/sombre.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste

@@ -338,6 +338,17 @@ connecté (voir `NavTabs.tsx`).
   année/réalisateur, bouton "Vu"/"À voir" (bascule `watched` +
   `watched_at`), 5 étoiles cliquables (cliquer l'étoile déjà sélectionnée
   efface la note), édition/suppression.
+- **`public/films/backgrounds/drive-in.jpg`** + classe `.films-backdrop`
+  (`globals.css`) : illustration de fond (ciné drive-in de nuit, pixel art
+  généré par l'utilisateur), même technique que `.rpg-backdrop` mais sur un
+  wrapper séparé — contrairement à l'espace RPG, l'onglet Films n'a **pas**
+  sa propre palette fixe : il continue de suivre le thème clair/sombre du
+  reste du site (`AppHeader` y garde son `variant` par défaut). Le voile
+  posé sur la photo utilise donc `color-mix(in srgb, var(--color-cream)
+  60%, transparent)` plutôt qu'une teinte fixe comme côté RPG : `--color-
+  cream` étant déjà re-définie sous `[data-theme="dark"]`, le voile — et la
+  lisibilité du texte `ink`/`ink-soft` par-dessus — s'adapte tout seul au
+  thème actif, vérifié visuellement dans les deux modes avant de livrer.
 
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme

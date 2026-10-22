@@ -149,6 +149,26 @@
   background-attachment: fixed, fixed, fixed;
 }
 
+/* Ambiance de l'onglet Films : illustration de fond (ciné drive-in de nuit,
+   pixel art généré — voir public/films/backgrounds/), même technique que
+   .rpg-backdrop ci-dessus mais sur un wrapper séparé puisque Films n'a pas
+   sa propre palette dédiée comme l'espace RPG : il continue de suivre le
+   thème clair/sombre du reste du site. Le voile par-dessus la photo utilise
+   donc --color-cream (pas une teinte fixe) : cette variable est déjà
+   re-définie sous [data-theme="dark"] plus haut dans ce fichier, donc le
+   voile — et la lisibilité du texte ink/ink-soft par-dessus — s'adapte tout
+   seul au thème actif sans logique supplémentaire. */
+.films-backdrop {
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-cream) 60%, transparent), color-mix(in srgb, var(--color-cream) 60%, transparent)),
+    url("/films/backgrounds/drive-in.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+  background-position: center, center;
+  background-attachment: fixed, fixed;
+}
+
 /* Cadre ornemental des panneaux RPG : dégradé de fond habillé d'un vrai
    cadre illustré (bronze gravé/délabré, généré par l'utilisateur — voir
    public/rpg/frames/) posé en border-image plutôt qu'en clip-path CSS.
