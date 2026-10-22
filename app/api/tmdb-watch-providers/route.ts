@@ -13,6 +13,7 @@ type TmdbProvidersResponse = {
   results?: Record<
     string,
     {
+      link?: string;
       flatrate?: { provider_name: string; logo_path?: string | null }[];
     }
   >;
@@ -24,6 +25,9 @@ type TmdbProvidersResponse = {
 // récupéré avec succès, confirmé non disponible en streaming par
 // abonnement en France actuellement (voir MovieRow.tsx, qui s'appuie sur
 // cette nuance pour ne pas réessayer en boucle un film réellement absent).
+// `link` accompagne toujours `providers` (même objet `results.FR` côté
+// TMDB) : la page JustWatch "où regarder" pour ce film, un seul lien pour
+// toutes les plateformes (TMDB ne fournit pas de lien direct par service).
 //
 // Uniquement les offres par ABONNEMENT ("flatrate" dans l'API TMDB) —
 // Netflix/Prime Video/Disney+ etc. — pas la location/achat à l'unité, hors
@@ -55,7 +59,7 @@ export async function GET(request: NextRequest) {
   try {
     const { match, debugReason: searchDebugReason } = await searchTmdbMovie(apiKey, title, year);
     if (!match) {
-      return NextResponse.json({ providers: null, debugReason: searchDebugReason });
+      return NextResponse.json({ providers: null, link: null, debugReason: searchDebugReason });
     }
 
     const res = await fetch(
@@ -63,11 +67,12 @@ export async function GET(request: NextRequest) {
       { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) {
-      return NextResponse.json({ providers: null, debugReason: `TMDB a répondu ${res.status}` });
+      return NextResponse.json({ providers: null, link: null, debugReason: `TMDB a répondu ${res.status}` });
     }
 
     const data = (await res.json()) as TmdbProvidersResponse;
-    const flatrate = data.results?.FR?.flatrate ?? [];
+    const frResult = data.results?.FR;
+    const flatrate = frResult?.flatrate ?? [];
     // Un même service peut apparaître plusieurs fois (offres groupées,
     // chaînes additionnelles) : dédoublonné par nom.
     const byName = new Map<string, WatchProvider>();
@@ -80,10 +85,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ providers: Array.from(byName.values()), debugReason: null });
+    return NextResponse.json({
+      providers: Array.from(byName.values()),
+      link: frResult?.link ?? null,
+      debugReason: null,
+    });
   } catch (err) {
     return NextResponse.json({
       providers: null,
+      link: null,
       debugReason: err instanceof Error ? err.message : "Erreur inconnue",
     });
   }

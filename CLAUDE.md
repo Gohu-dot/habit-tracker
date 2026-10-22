@@ -392,6 +392,14 @@ connecté (voir `NavTabs.tsx`).
   avec un 🔄 pour revérifier plus tard, puisque ça peut changer) — sans
   cette distinction, un film réellement absent de toute plateforme
   redéclencherait une requête à chaque affichage/import en masse.
+  **Pastilles cliquables** (colonne `watch_link`, `015_movie_watch_link.sql`) :
+  chaque pastille de plateforme est un lien vers la page JustWatch "où
+  regarder" de ce film (`results.FR.link` dans la réponse TMDB,
+  renvoyé en même temps que `providers`) — un seul lien pour tout le film,
+  **pas un lien direct par plateforme** (TMDB ne fournit pas de deep-link
+  par service), donc toutes les pastilles d'un même film pointent vers la
+  même URL. Récupéré/persisté en même temps que `watch_providers`
+  (`handleProvidersFetched` prend maintenant aussi `link` en paramètre).
   **Attribution JustWatch** : leurs conditions d'usage (via TMDB) exigent
   une mention quand leurs données sont affichées — ligne discrète en bas
   de `MoviesPage.tsx`, affichée seulement si au moins un film a déjà été

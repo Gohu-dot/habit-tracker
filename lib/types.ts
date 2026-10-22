@@ -54,6 +54,10 @@ export type Movie = {
   // null = jamais récupéré, [] = récupéré, confirmé non disponible
   // actuellement (voir app/api/tmdb-watch-providers).
   watch_providers: MovieWatchProvider[] | null;
+  // Lien JustWatch "où regarder" pour ce film, récupéré en même temps que
+  // watch_providers — un seul lien pour tout le film, pas un par
+  // plateforme (TMDB ne les fournit pas séparément).
+  watch_link: string | null;
   created_at: string;
 };
 

@@ -224,13 +224,14 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
   // Même découpage que handlePosterFetched/handleBulkPosterFetch ci-dessus
   // pour les plateformes de streaming (voir MovieRow.tsx pour l'appel côté
   // client et le détail de la distinction null/[]).
-  async function handleProvidersFetched(movie: Movie, providers: MovieWatchProvider[]) {
-    const { error } = await supabase.from("movies").update({ watch_providers: providers }).eq("id", movie.id);
+  async function handleProvidersFetched(movie: Movie, providers: MovieWatchProvider[], link: string | null) {
+    const payload = { watch_providers: providers, watch_link: link };
+    const { error } = await supabase.from("movies").update(payload).eq("id", movie.id);
     if (error) {
       console.error(error);
       return;
     }
-    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, watch_providers: providers } : m)));
+    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, ...payload } : m)));
   }
 
   const moviesMissingProviders = useMemo(() => movies.filter((m) => m.watch_providers === null), [movies]);
@@ -250,7 +251,7 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
         const res = await fetch(`/api/tmdb-watch-providers?${params.toString()}`);
         const data = await res.json();
         if (Array.isArray(data.providers)) {
-          await handleProvidersFetched(movie, data.providers);
+          await handleProvidersFetched(movie, data.providers, typeof data.link === "string" ? data.link : null);
           succeeded++;
         }
       } catch (err) {
@@ -565,7 +566,7 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
                 onEdit={() => handleStartEdit(movie)}
                 onDelete={() => handleDelete(movie)}
                 onPosterFetched={(posterUrl) => handlePosterFetched(movie, posterUrl)}
-                onProvidersFetched={(providers) => handleProvidersFetched(movie, providers)}
+                onProvidersFetched={(providers, link) => handleProvidersFetched(movie, providers, link)}
               />
             ))}
           </div>

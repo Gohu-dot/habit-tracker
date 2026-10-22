@@ -214,6 +214,11 @@ create table if not exists movies (
   -- chaque plateforme porte aussi son logo. NULL = jamais récupéré,
   -- [] = récupéré, confirmé non disponible actuellement.
   watch_providers jsonb,
+  -- Lien JustWatch vers la page "où regarder" de ce film, fourni par TMDB
+  -- en même temps que watch_providers ; ajoutée après coup (voir
+  -- 015_movie_watch_link.sql). Un seul lien pour tout le film (pas un par
+  -- plateforme, TMDB ne les fournit pas séparément) : voir MovieRow.tsx.
+  watch_link text,
   created_at timestamptz not null default now()
 );
 

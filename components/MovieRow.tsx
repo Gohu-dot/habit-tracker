@@ -11,7 +11,7 @@ type MovieRowProps = {
   onEdit: () => void;
   onDelete: () => void;
   onPosterFetched: (posterUrl: string | null) => void;
-  onProvidersFetched: (providers: MovieWatchProvider[]) => void;
+  onProvidersFetched: (providers: MovieWatchProvider[], link: string | null) => void;
 };
 
 // Une ligne = un film du classement. Volontairement compact (deux lignes de
@@ -74,7 +74,7 @@ export default function MovieRow({
       const res = await fetch(`/api/tmdb-watch-providers?${params.toString()}`);
       const data = await res.json();
       if (Array.isArray(data.providers)) {
-        onProvidersFetched(data.providers);
+        onProvidersFetched(data.providers, typeof data.link === "string" ? data.link : null);
       } else {
         setProvidersDebugReason(
           typeof data.debugReason === "string" ? data.debugReason : "Plateformes introuvables"
@@ -192,19 +192,39 @@ export default function MovieRow({
               {fetchingProviders ? "…" : "Pas en streaming actuellement 🔄"}
             </button>
           ) : (
-            movie.watch_providers.map((provider) => (
-              <span
-                key={provider.name}
-                title={provider.name}
-                className="flex items-center gap-1 rounded-full bg-sand/60 px-2 py-0.5 text-xs text-ink-soft"
-              >
-                {provider.logoUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element -- logo hébergé sur le CDN de TMDB, non listable dans next/image
-                  <img src={provider.logoUrl} alt="" className="h-3.5 w-3.5 rounded-sm" />
-                )}
-                {provider.name}
-              </span>
-            ))
+            movie.watch_providers.map((provider) => {
+              const badgeClass =
+                "flex items-center gap-1 rounded-full bg-sand/60 px-2 py-0.5 text-xs text-ink-soft";
+              const content = (
+                <>
+                  {provider.logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element -- logo hébergé sur le CDN de TMDB, non listable dans next/image
+                    <img src={provider.logoUrl} alt="" className="h-3.5 w-3.5 rounded-sm" />
+                  )}
+                  {provider.name}
+                </>
+              );
+              // Un seul lien JustWatch pour tout le film (pas un par
+              // plateforme, TMDB ne les fournit pas séparément) : toutes
+              // les pastilles mènent donc à la même page "où regarder",
+              // qui propose ensuite le bouton direct vers chaque service.
+              return movie.watch_link ? (
+                <a
+                  key={provider.name}
+                  href={movie.watch_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${provider.name} — voir sur JustWatch`}
+                  className={`${badgeClass} hover:bg-sand hover:text-ink`}
+                >
+                  {content}
+                </a>
+              ) : (
+                <span key={provider.name} title={provider.name} className={badgeClass}>
+                  {content}
+                </span>
+              );
+            })
           )}
         </div>
 
