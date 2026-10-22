@@ -226,6 +226,23 @@ export default function MovieRow({
               );
             })
           )}
+          {movie.watch_providers !== null && movie.watch_providers.length > 0 && (
+            // Seul moyen de forcer une nouvelle vérification une fois des
+            // plateformes déjà trouvées (la disponibilité change avec le
+            // temps, et le bouton "en masse" de MoviesPage.tsx ignore
+            // volontairement les films déjà vérifiés). Sans ce bouton, un
+            // film vérifié avant l'ajout de watch_link restait bloqué sans
+            // lien pour toujours.
+            <button
+              type="button"
+              onClick={fetchProviders}
+              disabled={fetchingProviders}
+              title="Revérifier (peut avoir changé depuis)"
+              className="text-xs text-ink-soft/60 hover:text-ink-soft"
+            >
+              {fetchingProviders ? "…" : "🔄"}
+            </button>
+          )}
         </div>
 
         {movie.note && <p className="text-xs text-ink-soft">{movie.note}</p>}

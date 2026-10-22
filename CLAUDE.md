@@ -400,6 +400,19 @@ connecté (voir `NavTabs.tsx`).
   par service), donc toutes les pastilles d'un même film pointent vers la
   même URL. Récupéré/persisté en même temps que `watch_providers`
   (`handleProvidersFetched` prend maintenant aussi `link` en paramètre).
+  **Bug vécu et corrigé** : une ligne dont `watch_providers` contenait déjà
+  des plateformes (vérifiée avant l'ajout de `watch_link`) n'avait
+  **aucun** moyen d'être re-vérifiée — ni le bouton "en masse" de
+  `MoviesPage.tsx` (qui ignore volontairement les films déjà vérifiés,
+  `watch_providers !== null`), ni `MovieRow.tsx` (qui n'affichait un
+  bouton de récupération que pour `null`/`[]`, jamais pour une liste non
+  vide). Corrigé à deux niveaux : un bouton 🔄 toujours visible à côté des
+  pastilles dès que des plateformes sont connues (`MovieRow.tsx`), et le
+  filtre `moviesMissingProviders` élargi pour inclure aussi les films
+  ayant des plateformes mais pas encore de `watch_link`. À garder en tête
+  pour toute future colonne ajoutée après coup à une donnée déjà
+  "récupérée avec succès" : prévoir dès le départ comment la rattraper,
+  pas seulement le cas jamais-récupéré.
   **Attribution JustWatch** : leurs conditions d'usage (via TMDB) exigent
   une mention quand leurs données sont affichées — ligne discrète en bas
   de `MoviesPage.tsx`, affichée seulement si au moins un film a déjà été

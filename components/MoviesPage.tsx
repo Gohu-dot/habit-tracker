@@ -234,7 +234,17 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
     setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, ...payload } : m)));
   }
 
-  const moviesMissingProviders = useMemo(() => movies.filter((m) => m.watch_providers === null), [movies]);
+  // Inclut aussi les films ayant des plateformes mais pas de watch_link
+  // (vérifiés avant l'ajout de cette colonne, voir 015_movie_watch_link.sql)
+  // — sinon le bouton "en masse" les ignore pour toujours, et seul le 🔄
+  // individuel de MovieRow.tsx pourrait les débloquer.
+  const moviesMissingProviders = useMemo(
+    () =>
+      movies.filter(
+        (m) => m.watch_providers === null || (m.watch_providers.length > 0 && !m.watch_link)
+      ),
+    [movies]
+  );
 
   async function handleBulkProvidersFetch() {
     const targets = moviesMissingProviders;
