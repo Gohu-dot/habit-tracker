@@ -198,7 +198,12 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   d'accueil" sur téléphone ouvre le site en plein écran, sans barre
   d'adresse, avec sa propre icône (voir `app/manifest.ts`, `app/icon.png`,
   `app/apple-icon.png`). Pas de mode hors-ligne : l'appli a de toute façon
-  besoin du réseau pour parler à Supabase.
+  besoin du réseau pour parler à Supabase. Un bouton **📲 Installer
+  l'application** apparaît en haut de l'écran (Android/ordinateur) tant que
+  le site n'est pas déjà installé — sur iPhone, où ce bouton n'existe pas
+  techniquement (limitation Safari), un petit rappel indique le geste
+  manuel à faire (Partager → Sur l'écran d'accueil). Peut être masqué d'une
+  croix si non souhaité.
 - Rappel du soir : une fois activé (bouton sur le tableau de bord), une
   tâche planifiée Vercel vérifie chaque soir à 19h (heure fixe) si
   l'objectif du jour est atteint, et envoie une notification push sinon

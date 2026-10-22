@@ -121,6 +121,28 @@ connecté (voir `NavTabs.tsx`).
   hors-ligne (l'appli a besoin du réseau pour Supabase de toute façon),
   mais un service worker existe désormais pour les notifications push
   (voir plus bas)
+- `components/InstallAppButton.tsx` (`lib/pwa.ts`) : le site était déjà
+  installable avant ce composant (manifest + icônes + service worker
+  suffisent), mais seulement via le menu du navigateur (3 points), peu
+  visible. Ce bouton, placé dans `AppHeader.tsx` (donc présent sur les
+  trois pages), déclenche directement l'invite native en capturant
+  `beforeinstallprompt` — un événement Chromium-only, à **appeler une
+  seule fois** (`.prompt()` ne fonctionne plus après, qu'il soit accepté
+  ou non, d'où `setPromptEvent(null)` après usage). Invisible par défaut :
+  seulement si le site n'est pas déjà lancé en mode standalone
+  (`isStandalone()`, `window.matchMedia("(display-mode: standalone)")`
+  côté Android/desktop, `navigator.standalone` côté iOS) et pas encore
+  masqué par l'utilisateur (`localStorage`, clé `pwa-install-dismissed`,
+  pas de "rappeler plus tard" — site à 2 comptes, pas besoin de plus
+  fin). **Safari/iOS ne supporte pas `beforeinstallprompt`** (API
+  Chromium) : sur iOS, affichage à la place d'un rappel textuel du geste
+  manuel (Partager → Sur l'écran d'accueil), seule façon d'y installer le
+  site — à rapprocher du message similaire déjà dans
+  `PushReminderToggle.tsx` (les notifications push y sont aussi
+  conditionnées à cette installation manuelle). Lecture de
+  `localStorage` déférée en `queueMicrotask` dans l'effet, même
+  convention que `ThemeToggle.tsx`, pour éviter le lint
+  `react-hooks/set-state-in-effect`.
 
 ## Onglet Recettes
 - `app/recettes/page.tsx` : route dédiée, même schéma que `app/page.tsx`
