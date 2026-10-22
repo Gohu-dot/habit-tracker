@@ -149,22 +149,26 @@
   background-attachment: fixed, fixed, fixed;
 }
 
-/* Cadre ornemental des panneaux RPG : dégradé de fond + double liseré
-   (bordure franche + lueur dorée intérieure très discrète) et petites
-   amorces de coin façon reliure de grimoire, obtenues en clippant les
-   quatre coins du panneau plutôt qu'avec des images. */
+/* Cadre ornemental des panneaux RPG : dégradé de fond habillé d'un vrai
+   cadre illustré (bronze gravé/délabré, généré par l'utilisateur — voir
+   public/rpg/frames/) posé en border-image plutôt qu'en clip-path CSS.
+   Technique "9-slice" : border-image-slice découpe l'image source en 4
+   coins + 4 bords + 1 centre ; seuls les 8 morceaux de bordure sont
+   dessinés (pas de mot-clé "fill"), donc le centre du PNG — transparent —
+   n'est jamais utilisé et c'est le dégradé de fond ci-dessous qui reste
+   visible à l'intérieur, quelle que soit la taille réelle du panneau
+   (les cadres n'ont pas une taille fixe sur le site : ils vont d'une
+   simple rangée d'en-tête à une longue carte de quêtes). */
 .rpg-frame {
   position: relative;
   background-image: linear-gradient(160deg, var(--color-rpg-panel), var(--color-rpg-panel-deep));
-  border: 1px solid var(--color-rpg-border);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--color-rpg-gold) 8%, transparent),
-    0 8px 24px -12px rgba(0, 0, 0, 0.6);
-  clip-path: polygon(
-    10px 0%, calc(100% - 10px) 0%, 100% 10px,
-    100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%,
-    0% calc(100% - 10px), 0% 10px
-  );
+  background-clip: padding-box;
+  border: 18px solid transparent;
+  border-image-source: url("/rpg/frames/cadre-grimoire.png");
+  border-image-slice: 115;
+  border-image-width: 18px;
+  border-image-repeat: round;
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 }
 
 /* Liseré doré fin sous les titres de section RPG, façon séparateur de

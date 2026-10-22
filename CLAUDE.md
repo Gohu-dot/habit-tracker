@@ -712,6 +712,32 @@ de portrait évolutif par niveau.
   pour envelopper un glyphe SVG nu, pas une icône déjà encadrée) —
   ajouter une icône = ajouter une entrée à `RPG_STAT_ICON_IMAGES`, le
   recadrage éventuel se fait à part avant de déposer le fichier.
+- **`public/rpg/frames/cadre-grimoire.png`** : cadre ornemental (bronze
+  gravé/délabré, généré par l'utilisateur) qui remplace le cadre CSS
+  (bordure + coins coupés en `clip-path`) de `.rpg-frame`
+  (`globals.css`) — utilisé par tous les panneaux `Card variant="rpg"`,
+  sur les trois onglets (Personnage, Quêtes, Journal), puisqu'ils
+  partagent tous cette classe. Technique **border-image 9-slice** plutôt
+  qu'une image de fond classique, car les panneaux n'ont pas une taille
+  fixe (d'une simple rangée d'en-tête à une longue carte de quêtes) :
+  `border-image-slice: 115` découpe le PNG (512×512, réduit depuis l'export
+  1024×1024 d'origine — un cadre affiché à ~18px sur l'écran n'a pas besoin
+  de plus de résolution) en 4 coins + 4 bords + 1 centre ; seuls les 8
+  morceaux de bordure sont dessinés (pas de mot-clé `fill`), donc le centre
+  — transparent dans le fichier — n'est jamais utilisé et c'est le dégradé
+  de fond du panneau qui reste visible à l'intérieur, quelle que soit sa
+  taille réelle. `border-image-repeat: round` pour que le motif de rivets
+  des bords se répète sans s'étirer de façon disproportionnée sur les
+  panneaux larges.
+  **Image source livrée en JPEG avec un fond "transparent" seulement en
+  apparence** (damier gris/blanc dessiné dans les pixels, pas un vrai
+  canal alpha) : la transparence réelle a été reconstruite après coup par
+  floodfill ImageMagick (`-fuzz 22% -fill none -draw "color X,Y
+  floodfill"` depuis plusieurs points du trou central et des quatre coins
+  du canevas) plutôt que par un simple remplacement de couleur, pour ne
+  pas aussi rendre transparents les reflets clairs du cadre lui-même — à
+  refaire de la même façon si un futur visuel généré arrive dans le même
+  état.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies
