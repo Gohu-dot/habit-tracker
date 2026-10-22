@@ -208,6 +208,12 @@ create table if not exists movies (
   -- ajoutée après coup (voir 013_movie_posters.sql), donc nullable comme
   -- year/director plutôt que present dès la création de la table.
   poster_url text,
+  -- Plateformes de streaming par abonnement en France, récupérées via
+  -- TMDB/JustWatch (voir app/api/tmdb-watch-providers) ; ajoutée après
+  -- coup (voir 014_movie_watch_providers.sql). jsonb plutôt que text[] car
+  -- chaque plateforme porte aussi son logo. NULL = jamais récupéré,
+  -- [] = récupéré, confirmé non disponible actuellement.
+  watch_providers jsonb,
   created_at timestamptz not null default now()
 );
 

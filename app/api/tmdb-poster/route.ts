@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { searchTmdbMovie } from "@/lib/tmdb";
 
 export const dynamic = "force-dynamic";
 
@@ -9,15 +10,11 @@ export const dynamic = "force-dynamic";
 // disponibles.
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
 
-type TmdbSearchResult = {
-  results?: { poster_path?: string | null; title?: string; release_date?: string }[];
-};
-
 // Recherche côté serveur (clé API jamais exposée au client, voir
 // TMDB_API_KEY ci-dessous) : étant donné un titre (et une année en
-// désambiguïsation, ex. les deux films "La vie est belle" de 1946 et 1997
-// du top 100), retrouve l'affiche correspondante sur TMDB. Toujours un 200
-// avec posterUrl à null en cas d'échec, même logique que
+// désambiguïsation), retrouve l'affiche correspondante sur TMDB (voir
+// lib/tmdb.ts pour la recherche, partagée avec /api/tmdb-watch-providers).
+// Toujours un 200 avec posterUrl à null en cas d'échec, même logique que
 // /api/tiktok-oembed : le client n'a qu'un seul cas à gérer, et
 // debugReason permet de diagnostiquer sans accès aux logs Vercel (voir
 // CLAUDE.md — ni TMDB ni Vercel ne sont joignables depuis cet
@@ -39,31 +36,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const params = new URLSearchParams({
-      api_key: apiKey,
-      query: title.trim(),
-      language: "fr-FR",
-      include_adult: "false",
-    });
-    if (year) params.set("primary_release_year", String(year));
-
-    const res = await fetch(`https://api.themoviedb.org/3/search/movie?${params.toString()}`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) {
-      return NextResponse.json({ posterUrl: null, debugReason: `TMDB a répondu ${res.status}` });
-    }
-
-    const data = (await res.json()) as TmdbSearchResult;
-    const match = data.results?.[0];
-    if (!match || !match.poster_path) {
+    const { match, debugReason } = await searchTmdbMovie(apiKey, title, year);
+    if (!match || !match.posterPath) {
       return NextResponse.json({
         posterUrl: null,
-        debugReason: `Aucune affiche trouvée pour "${title}"${year ? ` (${year})` : ""}`,
+        debugReason: debugReason ?? `Aucune affiche trouvée pour "${title}"${year ? ` (${year})` : ""}`,
       });
     }
 
-    return NextResponse.json({ posterUrl: `${TMDB_IMAGE_BASE}${match.poster_path}`, debugReason: null });
+    return NextResponse.json({ posterUrl: `${TMDB_IMAGE_BASE}${match.posterPath}`, debugReason: null });
   } catch (err) {
     return NextResponse.json({
       posterUrl: null,

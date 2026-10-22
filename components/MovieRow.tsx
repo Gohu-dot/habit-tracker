@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MOVIE_RATING_MAX } from "@/lib/movies";
-import type { Movie } from "@/lib/types";
+import type { Movie, MovieWatchProvider } from "@/lib/types";
 
 type MovieRowProps = {
   movie: Movie;
@@ -11,6 +11,7 @@ type MovieRowProps = {
   onEdit: () => void;
   onDelete: () => void;
   onPosterFetched: (posterUrl: string | null) => void;
+  onProvidersFetched: (providers: MovieWatchProvider[]) => void;
 };
 
 // Une ligne = un film du classement. Volontairement compact (deux lignes de
@@ -23,6 +24,7 @@ export default function MovieRow({
   onEdit,
   onDelete,
   onPosterFetched,
+  onProvidersFetched,
 }: MovieRowProps) {
   const subtitle = [movie.year, movie.director].filter(Boolean).join(" · ");
 
@@ -52,6 +54,36 @@ export default function MovieRow({
       setDebugReason(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
       setFetching(false);
+    }
+  }
+
+  // Même principe que fetchPoster ci-dessus, pour les plateformes de
+  // streaming. debugReason n'est affiché que si providers est resté
+  // `undefined` côté réponse (erreur) : un tableau vide `[]` est un
+  // résultat valide ("pas sur une plateforme actuellement"), pas une
+  // erreur à signaler.
+  const [fetchingProviders, setFetchingProviders] = useState(false);
+  const [providersDebugReason, setProvidersDebugReason] = useState<string | null>(null);
+
+  async function fetchProviders() {
+    setFetchingProviders(true);
+    setProvidersDebugReason(null);
+    try {
+      const params = new URLSearchParams({ title: movie.title });
+      if (movie.year) params.set("year", String(movie.year));
+      const res = await fetch(`/api/tmdb-watch-providers?${params.toString()}`);
+      const data = await res.json();
+      if (Array.isArray(data.providers)) {
+        onProvidersFetched(data.providers);
+      } else {
+        setProvidersDebugReason(
+          typeof data.debugReason === "string" ? data.debugReason : "Plateformes introuvables"
+        );
+      }
+    } catch (err) {
+      setProvidersDebugReason(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setFetchingProviders(false);
     }
   }
 
@@ -136,6 +168,44 @@ export default function MovieRow({
               );
             })}
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          {movie.watch_providers === null ? (
+            <button
+              type="button"
+              onClick={fetchProviders}
+              disabled={fetchingProviders}
+              title={providersDebugReason ?? "Récupérer les plateformes de streaming"}
+              className="rounded-full bg-sand/60 px-2 py-0.5 text-xs text-ink-soft hover:bg-sand disabled:opacity-60"
+            >
+              {fetchingProviders ? "…" : providersDebugReason ? "⚠️ Plateformes" : "📺 Plateformes"}
+            </button>
+          ) : movie.watch_providers.length === 0 ? (
+            <button
+              type="button"
+              onClick={fetchProviders}
+              disabled={fetchingProviders}
+              title="Revérifier (peut avoir changé depuis)"
+              className="text-xs text-ink-soft/70 hover:text-ink-soft"
+            >
+              {fetchingProviders ? "…" : "Pas en streaming actuellement 🔄"}
+            </button>
+          ) : (
+            movie.watch_providers.map((provider) => (
+              <span
+                key={provider.name}
+                title={provider.name}
+                className="flex items-center gap-1 rounded-full bg-sand/60 px-2 py-0.5 text-xs text-ink-soft"
+              >
+                {provider.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- logo hébergé sur le CDN de TMDB, non listable dans next/image
+                  <img src={provider.logoUrl} alt="" className="h-3.5 w-3.5 rounded-sm" />
+                )}
+                {provider.name}
+              </span>
+            ))
+          )}
         </div>
 
         {movie.note && <p className="text-xs text-ink-soft">{movie.note}</p>}

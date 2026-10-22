@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { parseMovieList } from "@/lib/movies";
-import type { Movie } from "@/lib/types";
+import type { Movie, MovieWatchProvider } from "@/lib/types";
 import AppHeader from "./AppHeader";
 import MovieRow from "./MovieRow";
 
@@ -39,6 +39,12 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
   const [bulkPosterFetching, setBulkPosterFetching] = useState(false);
   const [bulkPosterProgress, setBulkPosterProgress] = useState<{ done: number; total: number } | null>(null);
   const [bulkPosterSummary, setBulkPosterSummary] = useState<string | null>(null);
+
+  const [bulkProvidersFetching, setBulkProvidersFetching] = useState(false);
+  const [bulkProvidersProgress, setBulkProvidersProgress] = useState<{ done: number; total: number } | null>(
+    null
+  );
+  const [bulkProvidersSummary, setBulkProvidersSummary] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -210,6 +216,53 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
     setBulkPosterProgress(null);
     setBulkPosterSummary(
       `${succeeded}/${targets.length} affiche${targets.length > 1 ? "s" : ""} récupérée${
+        succeeded > 1 ? "s" : ""
+      }.`
+    );
+  }
+
+  // Même découpage que handlePosterFetched/handleBulkPosterFetch ci-dessus
+  // pour les plateformes de streaming (voir MovieRow.tsx pour l'appel côté
+  // client et le détail de la distinction null/[]).
+  async function handleProvidersFetched(movie: Movie, providers: MovieWatchProvider[]) {
+    const { error } = await supabase.from("movies").update({ watch_providers: providers }).eq("id", movie.id);
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, watch_providers: providers } : m)));
+  }
+
+  const moviesMissingProviders = useMemo(() => movies.filter((m) => m.watch_providers === null), [movies]);
+
+  async function handleBulkProvidersFetch() {
+    const targets = moviesMissingProviders;
+    if (targets.length === 0) return;
+    setBulkProvidersFetching(true);
+    setBulkProvidersSummary(null);
+    setBulkProvidersProgress({ done: 0, total: targets.length });
+    let succeeded = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const movie = targets[i];
+      try {
+        const params = new URLSearchParams({ title: movie.title });
+        if (movie.year) params.set("year", String(movie.year));
+        const res = await fetch(`/api/tmdb-watch-providers?${params.toString()}`);
+        const data = await res.json();
+        if (Array.isArray(data.providers)) {
+          await handleProvidersFetched(movie, data.providers);
+          succeeded++;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      setBulkProvidersProgress({ done: i + 1, total: targets.length });
+      if (i < targets.length - 1) await new Promise((r) => setTimeout(r, 300));
+    }
+    setBulkProvidersFetching(false);
+    setBulkProvidersProgress(null);
+    setBulkProvidersSummary(
+      `${succeeded}/${targets.length} film${targets.length > 1 ? "s" : ""} vérifié${
         succeeded > 1 ? "s" : ""
       }.`
     );
@@ -477,8 +530,23 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
                   } manquante${moviesMissingPoster.length > 1 ? "s" : ""}`}
             </button>
           )}
+          {moviesMissingProviders.length > 0 && (
+            <button
+              type="button"
+              onClick={handleBulkProvidersFetch}
+              disabled={bulkProvidersFetching}
+              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50"
+            >
+              {bulkProvidersFetching
+                ? `Vérification... (${bulkProvidersProgress?.done ?? 0}/${bulkProvidersProgress?.total ?? 0})`
+                : `📺 Vérifier les plateformes de ${moviesMissingProviders.length} film${
+                    moviesMissingProviders.length > 1 ? "s" : ""
+                  }`}
+            </button>
+          )}
         </div>
         {bulkPosterSummary && <p className="text-sm text-ink-soft">{bulkPosterSummary}</p>}
+        {bulkProvidersSummary && <p className="text-sm text-ink-soft">{bulkProvidersSummary}</p>}
 
         {filteredMovies.length === 0 ? (
           <p className="rounded-xl border border-sand bg-ivory p-4 text-sm text-ink-soft shadow-sm">
@@ -497,9 +565,25 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
                 onEdit={() => handleStartEdit(movie)}
                 onDelete={() => handleDelete(movie)}
                 onPosterFetched={(posterUrl) => handlePosterFetched(movie, posterUrl)}
+                onProvidersFetched={(providers) => handleProvidersFetched(movie, providers)}
               />
             ))}
           </div>
+        )}
+
+        {movies.some((m) => m.watch_providers !== null) && (
+          <p className="text-center text-[11px] text-ink-soft/70">
+            Disponibilité en streaming fournie par{" "}
+            <a
+              href="https://www.justwatch.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-ink-soft"
+            >
+              JustWatch
+            </a>{" "}
+            (via TMDB) — susceptible de changer.
+          </p>
         )}
       </div>
     </div>

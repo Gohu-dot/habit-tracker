@@ -263,7 +263,13 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   automatiquement (bouton 🎬 par film, ou "Récupérer les affiches
   manquantes" pour toute la liste) via l'API TMDB — nécessite une clé API
   gratuite dans `TMDB_API_KEY` (voir `.env.local.example`), sans quoi le
-  bouton échoue proprement sans bloquer le reste de l'app.
+  bouton échoue proprement sans bloquer le reste de l'app. De la même
+  façon, un bouton **📺 Plateformes** par film (ou pour toute la liste)
+  indique sur quel service de streaming par abonnement (Netflix, Prime
+  Video, Disney+...) le film est disponible **en France** — ces
+  informations viennent de JustWatch (mention en bas de page) et évoluent
+  dans le temps, donc à revérifier de temps en temps plutôt qu'une vérité
+  figée.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste

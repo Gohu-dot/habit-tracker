@@ -361,6 +361,10 @@ connecté (voir `NavTabs.tsx`).
   bouton "Récupérer les affiches manquantes" traite la liste en masse,
   séquentiellement avec une pause de 300 ms entre chaque appel, même
   logique que `handleBulkThumbnailFetch` côté Recettes.
+  La recherche TMDB (titre + année → id du film) vit dans `lib/tmdb.ts`
+  (`searchTmdbMovie`), partagée avec la route des plateformes de streaming
+  ci-dessous — évite que la logique de correspondance diverge entre les
+  deux routes.
   **Non testable en conditions réelles depuis cet environnement** (ni
   `themoviedb.org` ni une vraie clé API ne sont disponibles ici) : vérifié
   uniquement que la route répond proprement sans clé configurée
@@ -369,6 +373,39 @@ connecté (voir `NavTabs.tsx`).
   récupération réelle (bonne correspondance titre/année, forme exacte de
   la réponse TMDB) reste à confirmer au premier usage en production, une
   fois `TMDB_API_KEY` ajoutée sur Vercel.
+- **Plateformes de streaming (France) via TMDB/JustWatch**
+  (`app/api/tmdb-watch-providers/route.ts`, colonne `watch_providers`
+  ajoutée par `014_movie_watch_providers.sql`) : même architecture que les
+  affiches ci-dessus (recherche partagée via `lib/tmdb.ts`, bouton par
+  film + bouton en masse dans `MoviesPage.tsx`/`MovieRow.tsx`, pause de
+  300 ms entre appels). Uniquement les offres par **abonnement**
+  (`flatrate` dans l'API TMDB — Netflix, Prime Video, Disney+...), pas la
+  location/l'achat à l'unité : hors sujet pour "sur quelle plateforme de
+  streaming". Région **FR en dur**, pas de sélecteur de pays prévu (site
+  francophone).
+  `watch_providers` est `jsonb` (pas `text[]`) car chaque plateforme porte
+  aussi son logo (`{ name, logoUrl }[]`) — affiché en petite pastille dans
+  `MovieRow.tsx`. **Distinction importante côté client entre `null` et
+  `[]`** : `null` = jamais vérifié (bouton "📺 Plateformes" affiché),
+  `[]` = vérifié avec succès, confirmé non disponible en streaming par
+  abonnement actuellement (texte discret "Pas en streaming actuellement"
+  avec un 🔄 pour revérifier plus tard, puisque ça peut changer) — sans
+  cette distinction, un film réellement absent de toute plateforme
+  redéclencherait une requête à chaque affichage/import en masse.
+  **Attribution JustWatch** : leurs conditions d'usage (via TMDB) exigent
+  une mention quand leurs données sont affichées — ligne discrète en bas
+  de `MoviesPage.tsx`, affichée seulement si au moins un film a déjà été
+  vérifié (`movies.some(m => m.watch_providers !== null)`), pas en
+  permanence avant le premier usage.
+  Mêmes limites de test que les affiches : non vérifiable en conditions
+  réelles depuis cet environnement, uniquement le chemin sans clé API
+  (`debugReason: "TMDB_API_KEY manquante côté serveur"`) et le rendu des
+  trois états (`null`/`[]`/liste de plateformes) avec des données
+  simulées.
+  Ces données **bougent dans le temps** (un film quitte Netflix, arrive
+  sur Disney+...) : contrairement aux affiches (stables), elles sont donc
+  à considérer comme une photo à un instant T, pas une vérité figée — le
+  bouton de revérification sert justement à ça.
 - **`public/films/backgrounds/drive-in.jpg`** + classe `.films-backdrop`
   (`globals.css`) : illustration de fond (ciné drive-in de nuit, pixel art
   généré par l'utilisateur), même technique que `.rpg-backdrop` mais sur un

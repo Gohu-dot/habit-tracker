@@ -37,6 +37,8 @@ export type Recipe = {
   created_at: string;
 };
 
+export type MovieWatchProvider = { name: string; logoUrl: string | null };
+
 export type Movie = {
   id: string;
   user_id: string;
@@ -49,6 +51,9 @@ export type Movie = {
   rating: number | null;
   note: string | null;
   poster_url: string | null;
+  // null = jamais récupéré, [] = récupéré, confirmé non disponible
+  // actuellement (voir app/api/tmdb-watch-providers).
+  watch_providers: MovieWatchProvider[] | null;
   created_at: string;
 };
 
