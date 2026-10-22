@@ -184,3 +184,36 @@ create policy "rpg_main_quests: owner update" on rpg_main_quests
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "rpg_main_quests: owner delete" on rpg_main_quests
   for delete using (auth.uid() = user_id);
+
+-- Onglet Films : top 100 des meilleurs films de tous les temps (liste
+-- fournie par l'utilisateur, importée depuis l'app). PARTAGÉE entre tous
+-- les comptes du site dès la création (même logique que `recipes` depuis
+-- 009_shared_recipes.sql) : les deux membres du couple voient/cochent/notent
+-- les mêmes films. `rank` est UNIQUE pour permettre un import en upsert
+-- (`on_conflict: rank`) : recoller la liste pour corriger une faute de
+-- frappe met à jour title/year/director sans toucher watched/rating/note
+-- déjà renseignés (l'upsert ne porte que sur les colonnes envoyées).
+create table if not exists movies (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  rank integer not null unique check (rank > 0),
+  title text not null,
+  year integer,
+  director text,
+  watched boolean not null default false,
+  watched_at date,
+  rating smallint check (rating between 1 and 5),
+  note text,
+  created_at timestamptz not null default now()
+);
+
+alter table movies enable row level security;
+
+create policy "movies: any authenticated read" on movies
+  for select using (auth.uid() is not null);
+create policy "movies: any authenticated insert" on movies
+  for insert with check (auth.uid() is not null);
+create policy "movies: any authenticated update" on movies
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "movies: any authenticated delete" on movies
+  for delete using (auth.uid() is not null);

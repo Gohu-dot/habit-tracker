@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const BASE_TABS = [
   { href: "/", label: "Habitudes" },
   { href: "/recettes", label: "Recettes" },
+  { href: "/films", label: "Films" },
 ];
 
 const RPG_TAB = { href: "/rpg", label: "RPG" };

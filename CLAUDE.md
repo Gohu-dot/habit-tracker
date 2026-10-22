@@ -8,7 +8,7 @@ d'habitudes de vie valant chacune des points, avec une jauge quotidienne
 partage : les comptes sont créés manuellement dans Supabase.
 
 Deux comptes coexistent désormais sur le même site, chacun avec son propre
-onglet dédié en plus des onglets communs (Habitudes/Recettes) : le compte
+onglet dédié en plus des onglets communs (Habitudes/Recettes/Films) : le compte
 d'origine, et un second compte (voir "Onglet RPG" plus bas) dont l'onglet
 n'est visible que sur ce compte-là. RLS s'occupe déjà d'isoler les données
 de chaque compte ; seul l'affichage des onglets diffère selon qui est
@@ -287,6 +287,57 @@ connecté (voir `NavTabs.tsx`).
   a été vérifié, mais la récupération réelle d'une légende/miniature n'a pu
   être confirmée qu'en observant le comportement attendu — à surveiller au
   premier vrai partage en production si jamais l'aperçu ne remonte pas.
+
+## Onglet Films
+- `app/films/page.tsx` : route dédiée, même schéma que `app/recettes/page.tsx`
+  (`AuthGate` + composant de page).
+- `components/MoviesPage.tsx` : charge les films (RLS filtre déjà par
+  compte connecté, pas de `.eq("user_id", ...)` — même pattern que
+  `recipes`), triés par `rank` croissant (ordre du classement, pas de tri
+  alternatif proposé : une liste "top 100" n'a de sens que dans cet ordre).
+  Barre de progression (`watchedCount`/`movies.length`), recherche texte
+  (titre + réalisateur) et filtre vu/à voir se combinent dans
+  `filteredMovies`.
+- Table `movies` (voir `supabase/schema.sql` /
+  `supabase/migrations/012_movies.sql`) : `rank` (position dans le
+  classement, **UNIQUE**), `title`, `year`/`director` (nullable, infos du
+  film), `watched`/`watched_at`, `rating` (1 à 5, nullable), `note`
+  (nullable, avis perso). **Partagée entre tous les comptes du site dès la
+  création** (même logique que `recipes` depuis
+  `009_shared_recipes.sql`, mais directe ici, pas besoin d'une migration de
+  bascule) : policies RLS `auth.uid() is not null`, `user_id` juste
+  informatif (qui a ajouté/modifié la ligne).
+- **Import en masse** (`lib/movies.ts`, bouton "📋 Importer la liste" sur
+  `MoviesPage.tsx`) : coller le classement fourni par l'utilisateur (un
+  film par ligne) plutôt que les ajouter un par un. `parseMovieList` extrait
+  `(rang, titre, année)` par ligne, tolérant plusieurs formats (`"1. Titre
+  (Année)"`, `"1) Titre"`, `"1 - Titre - Année"`, sans numéro du tout →
+  rang séquentiel de repli). Deux pièges de faux positifs rencontrés et
+  corrigés pendant le développement (tests dans `app/test-preview`, voir
+  plus bas pour la convention) :
+  - Un titre qui commence par un chiffre ("12 Monkeys") ne doit jamais être
+    pris pour un numéro de rang : la regex de tête exige une ponctuation
+    explicite juste après les chiffres (`.`, `)`, `-`, `:`), pas juste un
+    espace.
+  - Un titre qui est lui-même une année ("1917") ou contient un chiffre à 4
+    chiffres collé au rang ("2001: l'Odyssée de l'espace") ne doit jamais
+    être tronqué par l'extraction d'année de fin de ligne : celle-ci exige
+    un séparateur avant les 4 chiffres et refuse de vider complètement le
+    titre.
+  - L'import utilise un **upsert Supabase sur `rank`**
+    (`on_conflict: "rank"`) plutôt qu'un simple insert : recoller la liste
+    plus tard pour corriger une faute de frappe met à jour
+    title/year/director sans toucher watched/rating/note déjà renseignés,
+    puisque l'upsert ne porte que sur les colonnes effectivement envoyées
+    dans le payload (watched/rating/note en sont absents). Un même rang
+    présent deux fois dans le texte collé est dédoublonné côté client
+    avant l'envoi (Postgres refuse qu'un upsert affecte deux fois la même
+    ligne dans un seul batch) — la dernière occurrence gagne.
+- `components/MovieRow.tsx` : une ligne compacte par film (pas une carte
+  façon `RecipeCard`, la liste va jusqu'à 100 entrées) — rang, titre,
+  année/réalisateur, bouton "Vu"/"À voir" (bascule `watched` +
+  `watched_at`), 5 étoiles cliquables (cliquer l'étoile déjà sélectionnée
+  efface la note), édition/suppression.
 
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme

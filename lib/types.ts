@@ -37,6 +37,20 @@ export type Recipe = {
   created_at: string;
 };
 
+export type Movie = {
+  id: string;
+  user_id: string;
+  rank: number;
+  title: string;
+  year: number | null;
+  director: string | null;
+  watched: boolean;
+  watched_at: string | null;
+  rating: number | null;
+  note: string | null;
+  created_at: string;
+};
+
 export type RpgQuest = {
   id: string;
   user_id: string;

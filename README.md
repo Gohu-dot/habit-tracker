@@ -132,7 +132,7 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
 3. Renseigne-la dans `NEXT_PUBLIC_RPG_USER_ID` (`.env.local` en local,
    variables d'environnement Vercel en prod), puis redéploie.
 4. Connecte-toi avec ce compte : l'onglet "RPG" apparaît à côté de
-   "Habitudes"/"Recettes". Sans cette variable, personne ne voit l'onglet
+   "Habitudes"/"Recettes"/"Films". Sans cette variable, personne ne voit l'onglet
    (mais `/rpg` reste techniquement accessible en tapant l'URL — sans
    conséquence, RLS empêche de toute façon de voir les données d'un autre
    compte).
@@ -250,6 +250,15 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   TikTok ; si une miniature disparaît sur une vieille recette, le site va
   automatiquement en rechercher une fraîche au prochain affichage — rien
   à faire de ton côté.
+- Un onglet **Films**, partagé entre les deux comptes comme les Recettes :
+  le top 100 des meilleurs films de tous les temps, classé par rang. Une
+  barre de progression indique combien ont déjà été vus ; chaque film peut
+  être marqué "Vu", noté de 1 à 5 étoiles et accompagné d'une note libre.
+  Plutôt que d'ajouter les 100 films un par un, un bouton **Importer la
+  liste** permet de coller le classement en une fois (un film par ligne,
+  numéroté ou non, avec ou sans année) : recoller la liste plus tard pour
+  corriger un titre met à jour l'info sans effacer ce qui a déjà été vu ou
+  noté.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste
