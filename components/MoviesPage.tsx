@@ -36,6 +36,10 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
   const [importing, setImporting] = useState(false);
   const [importSummary, setImportSummary] = useState<string | null>(null);
 
+  const [bulkPosterFetching, setBulkPosterFetching] = useState(false);
+  const [bulkPosterProgress, setBulkPosterProgress] = useState<{ done: number; total: number } | null>(null);
+  const [bulkPosterSummary, setBulkPosterSummary] = useState<string | null>(null);
+
   useEffect(() => {
     let ignore = false;
 
@@ -157,6 +161,58 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
     } else {
       setMovies((prev) => prev.filter((m) => m.id !== movie.id));
     }
+  }
+
+  // Appelé par MovieRow quand une affiche TMDB vient d'être récupérée côté
+  // client (voir fetchPoster dans MovieRow.tsx) : on la persiste ici, même
+  // découpage des responsabilités que handleThumbnailRefresh côté Recettes.
+  async function handlePosterFetched(movie: Movie, posterUrl: string | null) {
+    const { error } = await supabase.from("movies").update({ poster_url: posterUrl }).eq("id", movie.id);
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, poster_url: posterUrl } : m)));
+  }
+
+  const moviesMissingPoster = useMemo(() => movies.filter((m) => !m.poster_url), [movies]);
+
+  // Traite les films un par un plutôt qu'en parallèle, avec une pause entre
+  // chaque appel — même logique que handleBulkThumbnailFetch côté Recettes,
+  // par politesse vis-à-vis de l'API TMDB (gratuite, quota limité) plutôt
+  // que par nécessité technique ici.
+  async function handleBulkPosterFetch() {
+    const targets = moviesMissingPoster;
+    if (targets.length === 0) return;
+    setBulkPosterFetching(true);
+    setBulkPosterSummary(null);
+    setBulkPosterProgress({ done: 0, total: targets.length });
+    let succeeded = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const movie = targets[i];
+      try {
+        const params = new URLSearchParams({ title: movie.title });
+        if (movie.year) params.set("year", String(movie.year));
+        const res = await fetch(`/api/tmdb-poster?${params.toString()}`);
+        const data = await res.json();
+        const posterUrl = typeof data.posterUrl === "string" ? data.posterUrl : null;
+        if (posterUrl) {
+          await handlePosterFetched(movie, posterUrl);
+          succeeded++;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      setBulkPosterProgress({ done: i + 1, total: targets.length });
+      if (i < targets.length - 1) await new Promise((r) => setTimeout(r, 300));
+    }
+    setBulkPosterFetching(false);
+    setBulkPosterProgress(null);
+    setBulkPosterSummary(
+      `${succeeded}/${targets.length} affiche${targets.length > 1 ? "s" : ""} récupérée${
+        succeeded > 1 ? "s" : ""
+      }.`
+    );
   }
 
   // Colle une liste (un film par ligne, numérotée ou non) et l'upsert en une
@@ -392,7 +448,22 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
           <span className="text-ink-soft">
             {filteredMovies.length} film{filteredMovies.length > 1 ? "s" : ""}
           </span>
+          {moviesMissingPoster.length > 0 && (
+            <button
+              type="button"
+              onClick={handleBulkPosterFetch}
+              disabled={bulkPosterFetching}
+              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft hover:text-ink disabled:opacity-50"
+            >
+              {bulkPosterFetching
+                ? `Récupération... (${bulkPosterProgress?.done ?? 0}/${bulkPosterProgress?.total ?? 0})`
+                : `🎬 Récupérer les ${moviesMissingPoster.length} affiche${
+                    moviesMissingPoster.length > 1 ? "s" : ""
+                  } manquante${moviesMissingPoster.length > 1 ? "s" : ""}`}
+            </button>
+          )}
         </div>
+        {bulkPosterSummary && <p className="text-sm text-ink-soft">{bulkPosterSummary}</p>}
 
         {filteredMovies.length === 0 ? (
           <p className="rounded-xl border border-sand bg-ivory p-4 text-sm text-ink-soft shadow-sm">
@@ -410,6 +481,7 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
                 onRate={(newRating) => handleRate(movie, newRating)}
                 onEdit={() => handleStartEdit(movie)}
                 onDelete={() => handleDelete(movie)}
+                onPosterFetched={(posterUrl) => handlePosterFetched(movie, posterUrl)}
               />
             ))}
           </div>

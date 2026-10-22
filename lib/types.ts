@@ -48,6 +48,7 @@ export type Movie = {
   watched_at: string | null;
   rating: number | null;
   note: string | null;
+  poster_url: string | null;
   created_at: string;
 };
 

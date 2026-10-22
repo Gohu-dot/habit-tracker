@@ -338,6 +338,30 @@ connecté (voir `NavTabs.tsx`).
   année/réalisateur, bouton "Vu"/"À voir" (bascule `watched` +
   `watched_at`), 5 étoiles cliquables (cliquer l'étoile déjà sélectionnée
   efface la note), édition/suppression.
+- **Affiches récupérées automatiquement via TMDB** (`app/api/tmdb-poster/
+  route.ts`, colonne `poster_url` ajoutée par `013_movie_posters.sql`) :
+  même architecture que la miniature TikTok des Recettes — une route
+  serveur dédiée (clé `TMDB_API_KEY`, **jamais** préfixée `NEXT_PUBLIC_`,
+  jamais exposée au client) appelle `GET /search/movie` de l'API TMDB avec
+  le titre et, quand elle est connue, l'année (`primary_release_year`) pour
+  désambiguïser — nécessaire ici, le top 100 fourni contient deux films
+  tous deux titrés "La vie est belle" (1946 et 1997). Toujours un 200 avec
+  `posterUrl` à `null` en cas d'échec (clé absente, aucun résultat,
+  erreur réseau) + `debugReason`, même contrat que `/api/tiktok-oembed`.
+  `MovieRow.tsx` déclenche lui-même la récupération (bouton 🎬 si pas
+  encore d'affiche, ⚠️ en cas d'échec avec la raison en `title`/tooltip) et
+  délègue la persistance à `MoviesPage.tsx` via `onPosterFetched` ; un
+  bouton "Récupérer les affiches manquantes" traite la liste en masse,
+  séquentiellement avec une pause de 300 ms entre chaque appel, même
+  logique que `handleBulkThumbnailFetch` côté Recettes.
+  **Non testable en conditions réelles depuis cet environnement** (ni
+  `themoviedb.org` ni une vraie clé API ne sont disponibles ici) : vérifié
+  uniquement que la route répond proprement sans clé configurée
+  (`debugReason: "TMDB_API_KEY manquante côté serveur"`) et que
+  `MovieRow.tsx` affiche correctement une affiche déjà renseignée — la
+  récupération réelle (bonne correspondance titre/année, forme exacte de
+  la réponse TMDB) reste à confirmer au premier usage en production, une
+  fois `TMDB_API_KEY` ajoutée sur Vercel.
 - **`public/films/backgrounds/drive-in.jpg`** + classe `.films-backdrop`
   (`globals.css`) : illustration de fond (ciné drive-in de nuit, pixel art
   généré par l'utilisateur), même technique que `.rpg-backdrop` mais sur un

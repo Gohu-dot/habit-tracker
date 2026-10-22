@@ -204,6 +204,10 @@ create table if not exists movies (
   watched_at date,
   rating smallint check (rating between 1 and 5),
   note text,
+  -- Affiche récupérée automatiquement via TMDB (voir app/api/tmdb-poster) ;
+  -- ajoutée après coup (voir 013_movie_posters.sql), donc nullable comme
+  -- year/director plutôt que present dès la création de la table.
+  poster_url text,
   created_at timestamptz not null default now()
 );
 

@@ -259,7 +259,11 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   numéroté ou non, avec ou sans année) : recoller la liste plus tard pour
   corriger un titre met à jour l'info sans effacer ce qui a déjà été vu ou
   noté. Fond d'écran dédié (ciné drive-in de nuit), qui s'adapte
-  automatiquement au thème clair/sombre.
+  automatiquement au thème clair/sombre. Les affiches sont récupérées
+  automatiquement (bouton 🎬 par film, ou "Récupérer les affiches
+  manquantes" pour toute la liste) via l'API TMDB — nécessite une clé API
+  gratuite dans `TMDB_API_KEY` (voir `.env.local.example`), sans quoi le
+  bouton échoue proprement sans bloquer le reste de l'app.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste
