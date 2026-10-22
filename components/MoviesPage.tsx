@@ -298,8 +298,23 @@ export default function MoviesPage({ userId }: MoviesPageProps) {
               {watchedCount}/{movies.length} vus
             </p>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-sand">
-            <div className="h-full rounded-full bg-blush-deep" style={{ width: `${progressPercent}%` }} />
+          <div className="relative mt-3 mb-1 h-2 rounded-full bg-sand">
+            <div
+              className="h-full overflow-hidden rounded-full bg-gradient-to-r from-terracotta to-terracotta-deep"
+              style={{ width: `${progressPercent}%` }}
+            />
+            {/* Curseur pop-corn plutôt qu'un rond de slider classique — un
+                clin d'œil à l'ambiance ciné de l'onglet. Positionné en
+                absolu sur le conteneur (pas sur la barre de remplissage,
+                qui a overflow-hidden pour ses propres coins arrondis) afin
+                de ne jamais être rogné à 0%/100%. */}
+            <span
+              className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-base leading-none drop-shadow-sm"
+              style={{ left: `${progressPercent}%` }}
+              aria-hidden="true"
+            >
+              🍿
+            </span>
           </div>
         </div>
 

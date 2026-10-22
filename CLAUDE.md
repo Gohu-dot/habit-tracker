@@ -297,7 +297,14 @@ connecté (voir `NavTabs.tsx`).
   alternatif proposé : une liste "top 100" n'a de sens que dans cet ordre).
   Barre de progression (`watchedCount`/`movies.length`), recherche texte
   (titre + réalisateur) et filtre vu/à voir se combinent dans
-  `filteredMovies`.
+  `filteredMovies`. Curseur 🍿 sur la barre : un `<span>` positionné en
+  `absolute`/`left: {percent}%` sur le conteneur de la barre (pas sur la
+  barre de remplissage elle-même, qui garde son propre `overflow-hidden`
+  pour ses coins arrondis — sinon l'émoji serait rogné à 0 %/100 %).
+  Dégradé `from-terracotta to-terracotta-deep` plutôt que `bg-blush-deep`
+  (seule réutilisation de ce token en dehors du variant "jour de règles"
+  des Habitudes) : plus chaud/doré, raccorde mieux avec l'ambiance
+  "pop-corn ciné" que le rose du reste du site.
 - Table `movies` (voir `supabase/schema.sql` /
   `supabase/migrations/012_movies.sql`) : `rank` (position dans le
   classement, **UNIQUE**), `title`, `year`/`director` (nullable, infos du
