@@ -162,10 +162,10 @@
 .rpg-frame {
   position: relative;
   background-image: linear-gradient(160deg, var(--color-rpg-panel), var(--color-rpg-panel-deep));
-  background-clip: padding-box;
+  background-clip: border-box;
   border: 18px solid transparent;
   border-image-source: url("/rpg/frames/cadre-grimoire.png");
-  border-image-slice: 115;
+  border-image-slice: 140;
   border-image-width: 18px;
   border-image-repeat: round;
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);

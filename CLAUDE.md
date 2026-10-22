@@ -745,6 +745,17 @@ de portrait évolutif par niveau.
   qui laissait un petit triangle du fond de page visible dans chacun des
   quatre coins. Les panneaux `rpg` restent donc des rectangles francs —
   cohérent avec le cadre lui-même, qui n'est pas arrondi.
+  **Deux autres écarts corrigés après coup**, visibles entre le fond
+  marron du panneau et l'ornement doré : (1) l'image source avait une
+  marge transparente autour du dessin du cadre (reste du damier d'origine,
+  ~25 px sur un canevas 512) — recadrée avec `convert -shave 20x20` pour
+  que le cadre touche les bords du fichier, et `border-image-slice` ajusté
+  de 115 à 140 sur la nouvelle taille (472 px) pour couvrir tout le motif
+  d'angle ; (2) le motif d'angle a lui-même des creux/échancrures (volutes
+  ajourées) qui restaient transparents une fois découpés en 9-slice —
+  `background-clip: padding-box` → `border-box` pour que le dégradé du
+  panneau remplisse aussi ces creux au lieu de laisser voir le fond de
+  page à travers.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies
