@@ -738,6 +738,13 @@ de portrait évolutif par niveau.
   pas aussi rendre transparents les reflets clairs du cadre lui-même — à
   refaire de la même façon si un futur visuel généré arrive dans le même
   état.
+  **`rounded-xl` retiré de la variante `rpg` de `Card`** (`ui/card.tsx`) :
+  gardé par erreur lors du premier ajout du cadre, il arrondissait le
+  fond dégradé du panneau (`background-clip: padding-box`) sans arrondir
+  le cadre lui-même (border-image ignore toujours `border-radius`), ce
+  qui laissait un petit triangle du fond de page visible dans chacun des
+  quatre coins. Les panneaux `rpg` restent donc des rectangles francs —
+  cohérent avec le cadre lui-même, qui n'est pas arrondi.
 
 ## Points d'attention
 - Toute nouvelle requête Supabase doit rester compatible avec les policies

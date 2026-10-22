@@ -15,7 +15,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       ref={ref}
       className={cn(
         variant === "rpg"
-          ? "rpg-frame rounded-xl text-rpg-text"
+          ? "rpg-frame text-rpg-text"
           : "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
         className
       )}
