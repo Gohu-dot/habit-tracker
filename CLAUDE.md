@@ -533,19 +533,30 @@ leçon).
   de données (`domain` en texte libre, `content` en markdown maison) et le
   lecteur le supportaient déjà — un format court ne produit juste aucun
   `## ` donc pas de sommaire, ce qui est attendu.
-- `supabase/migrations/017_lessons_banque_culture_generale.sql` (20
-  leçons : astronomie, littérature, arts, histoire, géographie) puis
-  `018_lessons_banque_culture_generale_2.sql` (16 leçons de plus :
-  mythologie, physique/chimie, biologie/évolution, cinéma), 5 catégories
-  x 4 leçons chaque fois, rédigées par Claude à partir de ses
+- Trois migrations successives alimentent la banque : `017_...sql` (20
+  leçons : astronomie, littérature, arts, histoire, géographie),
+  `018_..._2.sql` (16 leçons : mythologie, physique/chimie,
+  biologie/évolution, cinéma), `019_..._3.sql` (28 leçons : 5 de
+  philosophie, 5 nouveaux "profils de pays" — capitale, gastronomie,
+  paysages, nouveau domaine `Pays et cultures du monde` ajouté à
+  `DOMAIN_SUGGESTIONS` — et 2 leçons de plus sur chacun des 9 thèmes déjà
+  amorcés par 017/018), toutes rédigées par Claude à partir de ses
   connaissances générales. **`editorial_status = 'a_verifier'`** et non
-  `'publiee'` pour tout ce lot : ce contenu n'a pas été vérifié par une
-  source externe au moment de l'écrire (pas d'accès réseau sortant depuis
-  cet environnement pour recouper les faits) — à relire une fois avant de
+  `'publiee'` pour tout ce contenu : il n'a pas été vérifié par une source
+  externe au moment de l'écrire (pas d'accès réseau sortant depuis cet
+  environnement pour recouper les faits) — à relire une fois avant de
   considérer une leçon comme fiable à 100%, statut modifiable depuis le
   formulaire d'édition. Les deux leçons de continuité (`a_importer`, voir
   ci-dessus) ne sont pas touchées par ces migrations : elles attendent
   toujours leur contenu d'origine, pas une réécriture par Claude.
+- **Bibliothèque regroupée par domaine** (`lessonsByDomain`,
+  `LessonsPage.tsx`) plutôt qu'une liste à plat : avec désormais plusieurs
+  dizaines de leçons sur des thèmes très variés, s'y retrouver par thème
+  devient plus utile qu'un simple ordre chronologique. Groupes triés par
+  nom de domaine (ordre alphabétique), leçons conservées dans leur ordre
+  d'origine (`created_at` croissant) à l'intérieur de chaque groupe ; les
+  filtres existants (recherche, domaine, "à réviser") s'appliquent avant
+  le regroupement, donc un domaine filtré n'affiche qu'un seul groupe.
 - **Bug vécu** : la première fois que j'ai présenté `017_...sql` à
   l'utilisateur dans le chat, j'ai paresseusement résumé son contenu
   ("fichier complet poussé sur la branche, ~370 lignes") au lieu de coller

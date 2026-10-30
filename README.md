@@ -274,11 +274,13 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   leçons courtes (3-4 paragraphes) de culture générale, vulgarisées pour
   être comprises sans connaissances préalables dans le domaine
   (astronomie, littérature, arts, histoire, géographie, mythologie,
-  physique/chimie, biologie/évolution, cinéma...). Une trentaine de
-  leçons de départ sont fournies par migrations SQL, avec un statut
-  éditorial "à vérifier" (relecture conseillée avant de les considérer
-  comme fiables à 100%) ; d'autres leçons peuvent être ajoutées ou
-  modifiées à tout moment depuis le formulaire "+ Ajouter une leçon".
+  physique/chimie, biologie/évolution, cinéma, philosophie, "profils de
+  pays" avec capitale/gastronomie/paysages...). Une soixantaine de leçons
+  de départ sont fournies par migrations SQL, avec un statut éditorial "à
+  vérifier" (relecture conseillée avant de les considérer comme fiables à
+  100%) ; d'autres leçons peuvent être ajoutées ou modifiées à tout moment
+  depuis le formulaire "+ Ajouter une leçon". La bibliothèque regroupe les
+  leçons par domaine (ordre alphabétique) plutôt qu'en liste à plat.
   Chaque leçon se lit avec un sommaire cliquable (si elle a des sections),
   reprend automatiquement à la dernière section consultée, et peut être
   marquée terminée. Une fois terminée, elle revient périodiquement dans "à

@@ -294,6 +294,24 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
     });
   }, [lessons, searchQuery, domainFilter, reviewFilter, progressByLesson]);
 
+  // Regroupe les leçons filtrées par domaine (ordre alphabétique des
+  // domaines, leçons dans chaque groupe conservées dans leur ordre
+  // d'origine, soit created_at croissant) plutôt qu'une simple liste à
+  // plat : avec plusieurs dizaines de leçons sur des thèmes très variés,
+  // s'y retrouver par thème devient plus utile qu'un ordre chronologique.
+  const lessonsByDomain = useMemo(() => {
+    const groups = new Map<string, Lesson[]>();
+    for (const lesson of filteredLessons) {
+      const group = groups.get(lesson.domain);
+      if (group) {
+        group.push(lesson);
+      } else {
+        groups.set(lesson.domain, [lesson]);
+      }
+    }
+    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filteredLessons]);
+
   const selectedLesson = selectedLessonId ? lessons.find((l) => l.id === selectedLessonId) ?? null : null;
 
   if (loading) {
@@ -507,16 +525,25 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
                 : "Aucune leçon ne correspond à ces filtres."}
             </p>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {filteredLessons.map((lesson) => (
-                <LessonCard
-                  key={lesson.id}
-                  lesson={lesson}
-                  progress={progressByLesson.get(lesson.id) ?? null}
-                  onOpen={() => handleOpenLesson(lesson)}
-                  onEdit={() => handleStartEdit(lesson)}
-                  onDelete={() => handleDelete(lesson)}
-                />
+            <div className="space-y-6">
+              {lessonsByDomain.map(([domainName, domainLessons]) => (
+                <div key={domainName} className="space-y-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+                    {domainName} <span className="font-normal">({domainLessons.length})</span>
+                  </h2>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {domainLessons.map((lesson) => (
+                      <LessonCard
+                        key={lesson.id}
+                        lesson={lesson}
+                        progress={progressByLesson.get(lesson.id) ?? null}
+                        onOpen={() => handleOpenLesson(lesson)}
+                        onEdit={() => handleStartEdit(lesson)}
+                        onDelete={() => handleDelete(lesson)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

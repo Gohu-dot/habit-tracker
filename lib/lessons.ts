@@ -31,6 +31,7 @@ export const DOMAIN_SUGGESTIONS = [
   "Psychologie et sciences cognitives",
   "Sociologie et économie",
   "Géographie et géopolitique",
+  "Pays et cultures du monde",
   "Arts, peinture, architecture et musique",
   "Littérature",
   "Cinéma",
