@@ -522,6 +522,27 @@ leçon).
   échec) testée hors React via un script Node. Le flux Supabase réel
   (upsert `lesson_progress`/`lesson_notes`, RLS) reste à confirmer au
   premier usage en production.
+- **Recentrage du contenu sur la culture générale courte** (changement de
+  cap par rapport au palier initial ci-dessus, décidé après usage) :
+  l'onglet n'est plus pensé comme un lieu d'import de contenu long déjà
+  écrit ailleurs, mais comme une vraie **banque de leçons courtes (3-4
+  paragraphes) et vulgarisées**, compréhensibles sans connaissances
+  préalables dans le domaine — astronomie, littérature/auteurs, arts,
+  histoire, géographie, etc. (catégories = `DOMAIN_SUGGESTIONS`,
+  `lib/lessons.ts`). Rien à changer côté code pour ce virage : le modèle
+  de données (`domain` en texte libre, `content` en markdown maison) et le
+  lecteur le supportaient déjà — un format court ne produit juste aucun
+  `## ` donc pas de sommaire, ce qui est attendu.
+- `supabase/migrations/017_lessons_banque_culture_generale.sql` : 20
+  leçons de départ (5 catégories x 4), rédigées par Claude à partir de ses
+  connaissances générales. **`editorial_status = 'a_verifier'`** et non
+  `'publiee'` pour tout ce lot : ce contenu n'a pas été vérifié par une
+  source externe au moment de l'écrire (pas d'accès réseau sortant depuis
+  cet environnement pour recouper les faits) — à relire une fois avant de
+  considérer une leçon comme fiable à 100%, statut modifiable depuis le
+  formulaire d'édition. Les deux leçons de continuité (`a_importer`, voir
+  ci-dessus) ne sont pas touchées par cette migration : elles attendent
+  toujours leur contenu d'origine, pas une réécriture par Claude.
 
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme
