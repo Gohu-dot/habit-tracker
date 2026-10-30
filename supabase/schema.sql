@@ -232,3 +232,81 @@ create policy "movies: any authenticated update" on movies
   for update using (auth.uid() is not null) with check (auth.uid() is not null);
 create policy "movies: any authenticated delete" on movies
   for delete using (auth.uid() is not null);
+
+-- Onglet Leçons : bibliothèque de culture générale (lecture longue +
+-- révision espacée). Trois tables aux périmètres différents, contrairement
+-- à l'habitude "tout partagé" de movies/recipes : `lessons` est PARTAGÉE
+-- (la bibliothèque de contenu elle-même), `lesson_progress`/`lesson_notes`
+-- sont scopées par compte (chacun avance et prend ses notes à son rythme,
+-- comme habit_logs).
+create table if not exists lessons (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  title text not null,
+  domain text not null,
+  summary text,
+  content text not null default '',
+  estimated_minutes integer,
+  difficulty text not null default 'intermediaire'
+    check (difficulty in ('decouverte', 'intermediaire', 'avance')),
+  editorial_status text not null default 'brouillon'
+    check (editorial_status in ('brouillon', 'a_verifier', 'verifiee', 'publiee', 'a_importer')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table lessons enable row level security;
+
+create policy "lessons: any authenticated read" on lessons
+  for select using (auth.uid() is not null);
+create policy "lessons: any authenticated insert" on lessons
+  for insert with check (auth.uid() is not null);
+create policy "lessons: any authenticated update" on lessons
+  for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "lessons: any authenticated delete" on lessons
+  for delete using (auth.uid() is not null);
+
+create table if not exists lesson_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  lesson_id uuid not null references lessons (id) on delete cascade,
+  status text not null default 'en_cours' check (status in ('en_cours', 'terminee')),
+  last_section_index integer not null default 0,
+  review_stage integer not null default 0,
+  next_review_at date,
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  updated_at timestamptz not null default now(),
+  unique (user_id, lesson_id)
+);
+
+alter table lesson_progress enable row level security;
+
+create policy "lesson_progress: owner read" on lesson_progress
+  for select using (auth.uid() = user_id);
+create policy "lesson_progress: owner insert" on lesson_progress
+  for insert with check (auth.uid() = user_id);
+create policy "lesson_progress: owner update" on lesson_progress
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "lesson_progress: owner delete" on lesson_progress
+  for delete using (auth.uid() = user_id);
+
+create table if not exists lesson_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  lesson_id uuid not null references lessons (id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table lesson_notes enable row level security;
+
+create policy "lesson_notes: owner read" on lesson_notes
+  for select using (auth.uid() = user_id);
+create policy "lesson_notes: owner insert" on lesson_notes
+  for insert with check (auth.uid() = user_id);
+create policy "lesson_notes: owner update" on lesson_notes
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "lesson_notes: owner delete" on lesson_notes
+  for delete using (auth.uid() = user_id);

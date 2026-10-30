@@ -1,4 +1,5 @@
 import type { HabitKey } from "./habits";
+import type { LessonDifficultyKey, LessonEditorialStatusKey } from "./lessons";
 import type { RecipeCategoryKey, RecipeStatusKey } from "./recipes";
 import type { RpgStatKey } from "./rpg";
 
@@ -59,6 +60,44 @@ export type Movie = {
   // plateforme (TMDB ne les fournit pas séparément).
   watch_link: string | null;
   created_at: string;
+};
+
+export type Lesson = {
+  id: string;
+  user_id: string;
+  title: string;
+  domain: string;
+  summary: string | null;
+  content: string;
+  estimated_minutes: number | null;
+  difficulty: LessonDifficultyKey;
+  editorial_status: LessonEditorialStatusKey;
+  created_at: string;
+  updated_at: string;
+};
+
+// Une ligne par (compte, leçon) — absence de ligne = "à découvrir", pas de
+// statut dédié pour cet état (voir 016_lessons.sql).
+export type LessonProgress = {
+  id: string;
+  user_id: string;
+  lesson_id: string;
+  status: "en_cours" | "terminee";
+  last_section_index: number;
+  review_stage: number;
+  next_review_at: string | null;
+  started_at: string;
+  completed_at: string | null;
+  updated_at: string;
+};
+
+export type LessonNote = {
+  id: string;
+  user_id: string;
+  lesson_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type RpgQuest = {

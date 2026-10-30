@@ -8,7 +8,7 @@ d'habitudes de vie valant chacune des points, avec une jauge quotidienne
 partage : les comptes sont créés manuellement dans Supabase.
 
 Deux comptes coexistent désormais sur le même site, chacun avec son propre
-onglet dédié en plus des onglets communs (Habitudes/Recettes/Films) : le compte
+onglet dédié en plus des onglets communs (Habitudes/Recettes/Films/Leçons) : le compte
 d'origine, et un second compte (voir "Onglet RPG" plus bas) dont l'onglet
 n'est visible que sur ce compte-là. RLS s'occupe déjà d'isoler les données
 de chaque compte ; seul l'affichage des onglets diffère selon qui est
@@ -438,6 +438,90 @@ connecté (voir `NavTabs.tsx`).
   cream` étant déjà re-définie sous `[data-theme="dark"]`, le voile — et la
   lisibilité du texte `ink`/`ink-soft` par-dessus — s'adapte tout seul au
   thème actif, vérifié visuellement dans les deux modes avant de livrer.
+
+## Onglet Leçons
+Bibliothèque de culture générale (lecture longue + révision espacée),
+partie d'un cahier des charges bien plus large fourni par l'utilisateur
+(rédigé via ChatGPT) — ce premier palier n'implémente que le socle
+fonctionnel (étape 1 du cahier des charges) : navigation, bibliothèque,
+lecteur, statuts de lecture, révision simple, notes perso. Volontairement
+**pas** implémentés pour l'instant (reportés à une itération future si le
+besoin se confirme à l'usage) : générateur de leçons assisté, export PDF,
+système de sources/citations avec statut de vérification, hiérarchie
+cycles → modules → leçons (structure plus plate pour l'instant : domaine →
+leçon).
+- `app/lecons/page.tsx` : route dédiée, même schéma que les autres onglets
+  (`AuthGate` + composant de page).
+- **Trois tables aux périmètres différents**, contrairement à l'habitude
+  "tout partagé" de movies/recipes (voir `016_lessons.sql`) :
+  - `lessons` : PARTAGÉE entre tous les comptes (la bibliothèque de
+    contenu elle-même, comme movies/recipes) — policies RLS
+    `auth.uid() is not null`.
+  - `lesson_progress` : scopée par compte (chacun avance à son rythme,
+    comme `habit_logs`) — une ligne par (compte, leçon), absente =
+    "à découvrir" (pas de statut dédié persisté pour cet état).
+  - `lesson_notes` : scopée par compte, notes personnelles jamais
+    partagées entre les deux comptes (contrairement au reste de l'onglet).
+- `domain` est un **champ texte libre**, pas un catalogue figé en `check`
+  (contrairement à `RECIPE_CATEGORIES`) : le cahier des charges insiste sur
+  la facilité d'ajout de nouvelles disciplines sans migration.
+  `DOMAIN_SUGGESTIONS` (`lib/lessons.ts`) alimente juste un `<datalist>` à
+  la saisie du formulaire, pour garder une cohérence des intitulés sans
+  verrouiller la liste.
+- **Markdown "maison" minimal** (`parseLessonContent`, `lib/lessons.ts`),
+  pas de dépendance ajoutée (`react-markdown` etc.) : le besoin réel pour
+  ce palier tient en quatre formes — `## ` titre de section (sommaire),
+  `### ` sous-titre, `> ` encadré discret ("définitions importantes" du
+  cahier des charges), `- ` liste (lignes consécutives regroupées), tout
+  le reste en paragraphes séparés par ligne vide. `extractTableOfContents`
+  ne garde que les blocs `h2` : ce sont aussi les ancres sur lesquelles
+  `last_section_index` pointe (voir plus bas).
+- `components/LessonReader.tsx` : lecteur avec sommaire cliquable, reprise
+  automatique à la dernière section consultée (`last_section_index`,
+  scroll vers l'ancre `lesson-section-{index}` une seule fois à
+  l'ouverture via une ref, pas à chaque re-render), bouton "Marquer comme
+  terminée", révision (si due), note personnelle (une seule note par
+  leçon pour ce palier — un champ "mes notes", pas une liste d'annotations
+  multiples ; vider le champ et enregistrer supprime la ligne
+  `lesson_notes`, cohérent avec "modifier ou supprimer ses notes" du
+  cahier des charges).
+  Les indices de section affichés dans le sommaire/les ancres sont
+  précalculés dans un `useMemo` (`sectionIndexByBlock`) plutôt que par une
+  variable incrémentée pendant le rendu JSX — la seconde approche est
+  rejetée par le lint `react-hooks` (mutation pendant le rendu).
+- **Révision espacée volontairement simple** (`REVIEW_INTERVALS_DAYS =
+  [1, 3, 7, 14, 30]` jours, `nextReviewStage`/`isReviewDue` dans
+  `lib/lessons.ts`) : `review_stage` avance d'un cran à chaque révision
+  réussie (plafonné au dernier palier), remis à 0 en cas d'échec.
+  Autoévaluation par deux boutons ("Je m'en souviens bien" / "À revoir
+  bientôt") plutôt qu'une correction automatique de réponse ouverte — pas
+  de pipeline IA fiable branché pour ça, le cahier des charges demande
+  explicitement une autoévaluation claire dans ce cas plutôt que de
+  simuler une correction intelligente.
+- `components/LessonsPage.tsx` : `upsertProgress` centralise toutes les
+  écritures sur `lesson_progress` (section consultée, validation,
+  révision) — insère la ligne si elle n'existe pas encore (premier contact
+  avec la leçon), sinon met à jour, pour ne pas dupliquer la logique
+  insert-ou-update trois fois. Carte de progression en tête de
+  bibliothèque (terminées/en cours/à réviser aujourd'hui), filtres
+  domaine + "à réviser aujourd'hui" + recherche texte.
+- **Continuité avec deux leçons déjà évoquées hors de cette session**
+  ("Pourquoi y a-t-il quelque chose plutôt que rien ?" et "Qu'est-ce que
+  la matière ?", voir le cahier des charges d'origine) : entrées créées
+  par la migration avec leur titre connu, contenu vide, statut éditorial
+  `a_importer` — je n'ai pas le texte intégral de ces échanges passés,
+  donc pas question de l'inventer. `LessonReader.tsx` affiche un bandeau
+  "Contenu pas encore importé" pour ce statut. À compléter en modifiant la
+  leçon depuis l'app une fois le texte disponible.
+- **Non testé avec une vraie base Supabase** (comme pour TMDB, pas d'accès
+  réseau depuis cet environnement) : vérifié uniquement le rendu des
+  composants avec des données simulées (`app/test-preview`, supprimé avant
+  commit) — cartes dans leurs quatre états, lecteur avec contenu
+  d'exemple, clic sur "Terminer"/sauvegarde de note, et la logique pure de
+  `nextReviewStage` (chaîne de succès 1→3→7→14→30→30, remise à 0 sur
+  échec) testée hors React via un script Node. Le flux Supabase réel
+  (upsert `lesson_progress`/`lesson_notes`, RLS) reste à confirmer au
+  premier usage en production.
 
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme

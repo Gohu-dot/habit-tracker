@@ -132,7 +132,7 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
 3. Renseigne-la dans `NEXT_PUBLIC_RPG_USER_ID` (`.env.local` en local,
    variables d'environnement Vercel en prod), puis redéploie.
 4. Connecte-toi avec ce compte : l'onglet "RPG" apparaît à côté de
-   "Habitudes"/"Recettes"/"Films". Sans cette variable, personne ne voit l'onglet
+   "Habitudes"/"Recettes"/"Films"/"Leçons". Sans cette variable, personne ne voit l'onglet
    (mais `/rpg` reste techniquement accessible en tapant l'URL — sans
    conséquence, RLS empêche de toute façon de voir les données d'un autre
    compte).
@@ -270,6 +270,17 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   informations viennent de JustWatch (mention en bas de page) et évoluent
   dans le temps, donc à revérifier de temps en temps plutôt qu'une vérité
   figée.
+- Un onglet **Leçons**, partagé entre les deux comptes : une bibliothèque
+  de culture générale à lire soi-même (pas de contenu pré-rempli, à
+  rédiger ou coller depuis le formulaire "+ Ajouter une leçon"). Chaque
+  leçon se lit avec un sommaire cliquable, reprend automatiquement à la
+  dernière section consultée, et peut être marquée terminée. Une fois
+  terminée, elle revient périodiquement dans "à réviser" (1, 3, 7, 14 puis
+  30 jours, espacés davantage à chaque révision réussie) avec une
+  autoévaluation simple. Une note personnelle peut être prise sur chaque
+  leçon, conservée d'une session à l'autre. Premier palier d'un projet
+  plus large : pas encore de génération assistée de contenu, d'export PDF
+  ni de système de sources/citations.
 - Un onglet **RPG**, visible uniquement sur le compte configuré (voir
   section 6), avec une ambiance visuelle dédiée (dark fantasy — fond
   sombre, accents or/violet) indépendante du thème clair/sombre du reste
