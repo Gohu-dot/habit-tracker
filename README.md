@@ -273,8 +273,9 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
 - Un onglet **Leçons**, partagé entre les deux comptes : une banque de
   leçons courtes (3-4 paragraphes) de culture générale, vulgarisées pour
   être comprises sans connaissances préalables dans le domaine
-  (astronomie, littérature, arts, histoire, géographie...). Une première
-  vingtaine de leçons est fournie par migration SQL, avec un statut
+  (astronomie, littérature, arts, histoire, géographie, mythologie,
+  physique/chimie, biologie/évolution, cinéma...). Une trentaine de
+  leçons de départ sont fournies par migrations SQL, avec un statut
   éditorial "à vérifier" (relecture conseillée avant de les considérer
   comme fiables à 100%) ; d'autres leçons peuvent être ajoutées ou
   modifiées à tout moment depuis le formulaire "+ Ajouter une leçon".

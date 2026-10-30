@@ -533,16 +533,28 @@ leçon).
   de données (`domain` en texte libre, `content` en markdown maison) et le
   lecteur le supportaient déjà — un format court ne produit juste aucun
   `## ` donc pas de sommaire, ce qui est attendu.
-- `supabase/migrations/017_lessons_banque_culture_generale.sql` : 20
-  leçons de départ (5 catégories x 4), rédigées par Claude à partir de ses
+- `supabase/migrations/017_lessons_banque_culture_generale.sql` (20
+  leçons : astronomie, littérature, arts, histoire, géographie) puis
+  `018_lessons_banque_culture_generale_2.sql` (16 leçons de plus :
+  mythologie, physique/chimie, biologie/évolution, cinéma), 5 catégories
+  x 4 leçons chaque fois, rédigées par Claude à partir de ses
   connaissances générales. **`editorial_status = 'a_verifier'`** et non
   `'publiee'` pour tout ce lot : ce contenu n'a pas été vérifié par une
   source externe au moment de l'écrire (pas d'accès réseau sortant depuis
   cet environnement pour recouper les faits) — à relire une fois avant de
   considérer une leçon comme fiable à 100%, statut modifiable depuis le
   formulaire d'édition. Les deux leçons de continuité (`a_importer`, voir
-  ci-dessus) ne sont pas touchées par cette migration : elles attendent
+  ci-dessus) ne sont pas touchées par ces migrations : elles attendent
   toujours leur contenu d'origine, pas une réécriture par Claude.
+- **Bug vécu** : la première fois que j'ai présenté `017_...sql` à
+  l'utilisateur dans le chat, j'ai paresseusement résumé son contenu
+  ("fichier complet poussé sur la branche, ~370 lignes") au lieu de coller
+  le texte SQL réel — contrairement à toutes les migrations précédentes,
+  toujours collées intégralement. L'utilisateur a vraisemblablement
+  exécuté ce résumé tel quel (un bloc presque vide), d'où les leçons
+  absentes après coup. Leçon : toujours coller le SQL exécutable complet
+  dans la réponse, jamais un résumé ou un renvoi "voir le fichier", même
+  quand le fichier est long et déjà poussé sur la branche.
 
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme
