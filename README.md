@@ -280,10 +280,16 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   vérifier" (relecture conseillée avant de les considérer comme fiables à
   100%) ; d'autres leçons peuvent être ajoutées ou modifiées à tout moment
   depuis le formulaire "+ Ajouter une leçon". La bibliothèque regroupe les
-  leçons par domaine (ordre alphabétique) plutôt qu'en liste à plat.
-  Chaque leçon se lit avec un sommaire cliquable (si elle a des sections),
-  reprend automatiquement à la dernière section consultée, et peut être
-  marquée terminée. Une fois terminée, elle revient périodiquement dans "à
+  leçons par domaine (ordre alphabétique, avec une icône et un ratio
+  "terminées" par groupe), avec en plus des filtres de recherche, domaine,
+  difficulté et durée (≤5, 6-15, >15 min). Une carte **"🎲 Leçon du jour"**
+  propose chaque jour une leçon pas encore terminée (suggestion stable
+  toute la journée, qui change le lendemain), et la carte de progression
+  affiche aussi une **série de lecture** ("🔥 X jours d'affilée"), sur le
+  même principe que les séries de l'onglet Habitudes. Chaque leçon se lit
+  avec un sommaire cliquable (si elle a des sections), reprend
+  automatiquement à la dernière section consultée, et peut être marquée
+  terminée. Une fois terminée, elle revient périodiquement dans "à
   réviser" (1, 3, 7, 14 puis 30 jours, espacés davantage à chaque révision
   réussie) avec une autoévaluation simple. Une note personnelle peut être
   prise sur chaque leçon, conservée d'une session à l'autre. Premier

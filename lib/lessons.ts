@@ -1,3 +1,5 @@
+import { addDays, toISODate } from "./date";
+
 export const LESSON_DIFFICULTIES = [
   { key: "decouverte", name: "Découverte" },
   { key: "intermediaire", name: "Intermédiaire" },
@@ -20,6 +22,37 @@ export type LessonEditorialStatusKey = (typeof LESSON_EDITORIAL_STATUSES)[number
 // l'architecture doit permettre d'ajouter facilement de nouvelles
 // disciplines sans toucher au code, `domain` reste un champ texte libre
 // côté base (voir 016_lessons.sql).
+// Icône affichée à côté de chaque groupe de domaine dans la bibliothèque
+// (LessonsPage.tsx) : juste un repère visuel, pas une donnée persistée.
+// `DOMAIN_ICONS` ne couvre que les domaines suggérés ci-dessous ; un
+// domaine personnalisé tapé librement par l'utilisateur retombe sur
+// `DEFAULT_DOMAIN_ICON`, `domain` restant un champ texte libre côté base.
+const DEFAULT_DOMAIN_ICON = "📘";
+
+const DOMAIN_ICONS: Record<string, string> = {
+  "Cosmologie et astronomie": "🪐",
+  "Physique et chimie": "⚛️",
+  "Biologie et évolution": "🧬",
+  "Corps humain et neurosciences": "🧠",
+  "Histoire mondiale": "🏛️",
+  "Histoire des sciences et des techniques": "🔬",
+  Philosophie: "💭",
+  "Psychologie et sciences cognitives": "🧩",
+  "Sociologie et économie": "🏙️",
+  "Géographie et géopolitique": "🌍",
+  "Pays et cultures du monde": "🗺️",
+  "Arts, peinture, architecture et musique": "🎨",
+  Littérature: "📖",
+  Cinéma: "🎬",
+  "Mathématiques et logique": "🔢",
+  "Technologies et société": "💻",
+  "Mythologies et civilisations": "🏺",
+};
+
+export function domainIcon(domain: string): string {
+  return DOMAIN_ICONS[domain] ?? DEFAULT_DOMAIN_ICON;
+}
+
 export const DOMAIN_SUGGESTIONS = [
   "Cosmologie et astronomie",
   "Physique et chimie",
@@ -141,4 +174,58 @@ export function parseLessonContent(content: string): LessonBlock[] {
 // ancres sur lesquelles last_section_index pointe (voir LessonReader.tsx).
 export function extractTableOfContents(blocks: LessonBlock[]): string[] {
   return blocks.filter((b): b is { type: "h2"; text: string } => b.type === "h2").map((b) => b.text);
+}
+
+// Sélection déterministe par jour (même date ISO -> même résultat) plutôt
+// qu'un vrai hasard : la suggestion reste stable toute la journée même si
+// la page est rechargée plusieurs fois, et change naturellement le
+// lendemain puisque la date d'entrée change.
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+// "Leçon du jour" : une suggestion stable pour la journée en cours, parmi
+// les leçons pas encore terminées (à découvrir ou en cours). `isDone[i]`
+// correspond à `lessons[i]` côté appelant (LessonsPage.tsx) — on manipule
+// des indices plutôt que des objets Lesson pour ne pas avoir à importer
+// les types de lib/types.ts ici, qui importe déjà depuis ce fichier.
+// Retourne null si tout a déjà été lu, plutôt qu'un repli sur une leçon
+// terminée qui laisserait croire qu'il reste du nouveau contenu.
+export function pickDailyLesson(isDone: boolean[], todayISO: string): number | null {
+  const candidateIndices = isDone.reduce<number[]>((acc, done, index) => {
+    if (!done) acc.push(index);
+    return acc;
+  }, []);
+  if (candidateIndices.length === 0) return null;
+  return candidateIndices[hashString(todayISO) % candidateIndices.length];
+}
+
+// Série de jours consécutifs (en remontant depuis aujourd'hui) avec au
+// moins une activité sur une leçon (lecture, validation ou révision) —
+// même principe que computeStreak (lib/history.ts) pour les habitudes :
+// le jour en cours ne casse pas la série tant qu'il n'est pas terminé, il
+// compte juste comme "pas encore" tant qu'aucune activité n'y est logguée.
+// `activityDaysISO` : une date "YYYY-MM-DD" par activité (ex. `updated_at`
+// de chaque `lesson_progress`, converti côté appelant avec `toISODate` de
+// lib/date.ts), pas forcément dédupliquée.
+export function computeLessonStreak(activityDaysISO: string[], todayISO: string): number {
+  const activeDays = new Set(activityDaysISO);
+  let streak = 0;
+  let cursor = new Date(`${todayISO}T00:00:00`);
+
+  if (activeDays.has(toISODate(cursor))) {
+    streak++;
+  }
+  cursor = addDays(cursor, -1);
+
+  while (activeDays.has(toISODate(cursor))) {
+    streak++;
+    cursor = addDays(cursor, -1);
+  }
+
+  return streak;
 }

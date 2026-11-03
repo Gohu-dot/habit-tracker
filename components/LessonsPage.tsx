@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toISODate } from "@/lib/date";
 import { supabase } from "@/lib/supabaseClient";
 import {
   DOMAIN_SUGGESTIONS,
   LESSON_DIFFICULTIES,
   LESSON_EDITORIAL_STATUSES,
+  computeLessonStreak,
+  domainIcon,
   isReviewDue,
   nextReviewStage,
+  pickDailyLesson,
   type LessonDifficultyKey,
   type LessonEditorialStatusKey,
 } from "@/lib/lessons";
@@ -23,6 +27,11 @@ type LessonsPageProps = {
 const DOMAIN_FILTER_ALL = "tous";
 const REVIEW_FILTER_ALL = "toutes";
 const REVIEW_FILTER_DUE = "a_reviser";
+const DIFFICULTY_FILTER_ALL = "toutes";
+const DURATION_FILTER_ALL = "toutes";
+const DURATION_FILTER_SHORT = "court"; // <= 5 min
+const DURATION_FILTER_MEDIUM = "moyen"; // 6-15 min
+const DURATION_FILTER_LONG = "long"; // > 15 min
 
 export default function LessonsPage({ userId }: LessonsPageProps) {
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -47,6 +56,8 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState(DOMAIN_FILTER_ALL);
   const [reviewFilter, setReviewFilter] = useState(REVIEW_FILTER_ALL);
+  const [difficultyFilter, setDifficultyFilter] = useState(DIFFICULTY_FILTER_ALL);
+  const [durationFilter, setDurationFilter] = useState(DURATION_FILTER_ALL);
 
   useEffect(() => {
     let ignore = false;
@@ -290,9 +301,16 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
       const p = progressByLesson.get(l.id);
       const matchesReview =
         reviewFilter === REVIEW_FILTER_ALL || (p?.status === "terminee" && isReviewDue(p.next_review_at));
-      return matchesDomain && matchesQuery && matchesReview;
+      const matchesDifficulty = difficultyFilter === DIFFICULTY_FILTER_ALL || l.difficulty === difficultyFilter;
+      const minutes = l.estimated_minutes;
+      const matchesDuration =
+        durationFilter === DURATION_FILTER_ALL ||
+        (durationFilter === DURATION_FILTER_SHORT && minutes !== null && minutes <= 5) ||
+        (durationFilter === DURATION_FILTER_MEDIUM && minutes !== null && minutes > 5 && minutes <= 15) ||
+        (durationFilter === DURATION_FILTER_LONG && minutes !== null && minutes > 15);
+      return matchesDomain && matchesQuery && matchesReview && matchesDifficulty && matchesDuration;
     });
-  }, [lessons, searchQuery, domainFilter, reviewFilter, progressByLesson]);
+  }, [lessons, searchQuery, domainFilter, reviewFilter, difficultyFilter, durationFilter, progressByLesson]);
 
   // Regroupe les leçons filtrées par domaine (ordre alphabétique des
   // domaines, leçons dans chaque groupe conservées dans leur ordre
@@ -311,6 +329,25 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
     }
     return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [filteredLessons]);
+
+  // "Leçon du jour" : suggestion stable pour la journée (voir
+  // pickDailyLesson, lib/lessons.ts), parmi les leçons non terminées, sur
+  // la liste complète (pas filteredLessons) pour ne pas dépendre des
+  // filtres de recherche en cours.
+  const today = toISODate(new Date());
+  const dailyLesson = useMemo(() => {
+    const isDone = lessons.map((l) => progressByLesson.get(l.id)?.status === "terminee");
+    const index = pickDailyLesson(isDone, today);
+    return index === null ? null : lessons[index];
+  }, [lessons, progressByLesson, today]);
+
+  // Série de jours consécutifs avec au moins une activité sur une leçon
+  // (ouverture, validation ou révision), à partir de la date de dernière
+  // mise à jour de chaque lesson_progress.
+  const lessonStreak = useMemo(() => {
+    const activityDaysISO = Array.from(progressByLesson.values()).map((p) => toISODate(new Date(p.updated_at)));
+    return computeLessonStreak(activityDaysISO, today);
+  }, [progressByLesson, today]);
 
   const selectedLesson = selectedLessonId ? lessons.find((l) => l.id === selectedLessonId) ?? null : null;
 
@@ -346,8 +383,26 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
             <p className="text-sm text-ink-soft">
               {counts.terminees}/{counts.total} terminées · {counts.enCours} en cours
               {counts.aReviser > 0 && ` · ${counts.aReviser} à réviser aujourd'hui`}
+              {lessonStreak > 0 && ` · 🔥 ${lessonStreak} jour${lessonStreak > 1 ? "s" : ""} d'affilée`}
             </p>
           </div>
+
+          {dailyLesson && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand bg-blush/15 p-4 shadow-sm">
+              <div>
+                <p className="font-medium text-ink">🎲 Leçon du jour</p>
+                <p className="text-sm text-ink-soft">
+                  {domainIcon(dailyLesson.domain)} {dailyLesson.title}
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenLesson(dailyLesson)}
+                className="rounded-md bg-blush-deep px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+              >
+                Découvrir
+              </button>
+            </div>
+          )}
 
           <details
             open={formOpen}
@@ -513,6 +568,28 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
               <option value={REVIEW_FILTER_ALL}>Toutes</option>
               <option value={REVIEW_FILTER_DUE}>À réviser aujourd&rsquo;hui</option>
             </select>
+            <select
+              value={difficultyFilter}
+              onChange={(e) => setDifficultyFilter(e.target.value)}
+              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+            >
+              <option value={DIFFICULTY_FILTER_ALL}>Toutes difficultés</option>
+              {LESSON_DIFFICULTIES.map((d) => (
+                <option key={d.key} value={d.key}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={durationFilter}
+              onChange={(e) => setDurationFilter(e.target.value)}
+              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+            >
+              <option value={DURATION_FILTER_ALL}>Toutes durées</option>
+              <option value={DURATION_FILTER_SHORT}>≤ 5 min</option>
+              <option value={DURATION_FILTER_MEDIUM}>6 à 15 min</option>
+              <option value={DURATION_FILTER_LONG}>&gt; 15 min</option>
+            </select>
             <span className="text-ink-soft">
               {filteredLessons.length} leçon{filteredLessons.length > 1 ? "s" : ""}
             </span>
@@ -526,25 +603,33 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
             </p>
           ) : (
             <div className="space-y-6">
-              {lessonsByDomain.map(([domainName, domainLessons]) => (
-                <div key={domainName} className="space-y-3">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
-                    {domainName} <span className="font-normal">({domainLessons.length})</span>
-                  </h2>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {domainLessons.map((lesson) => (
-                      <LessonCard
-                        key={lesson.id}
-                        lesson={lesson}
-                        progress={progressByLesson.get(lesson.id) ?? null}
-                        onOpen={() => handleOpenLesson(lesson)}
-                        onEdit={() => handleStartEdit(lesson)}
-                        onDelete={() => handleDelete(lesson)}
-                      />
-                    ))}
+              {lessonsByDomain.map(([domainName, domainLessons]) => {
+                const doneInGroup = domainLessons.filter(
+                  (l) => progressByLesson.get(l.id)?.status === "terminee"
+                ).length;
+                return (
+                  <div key={domainName} className="space-y-3">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+                      {domainIcon(domainName)} {domainName}{" "}
+                      <span className="font-normal normal-case">
+                        ({doneInGroup}/{domainLessons.length} terminées)
+                      </span>
+                    </h2>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {domainLessons.map((lesson) => (
+                        <LessonCard
+                          key={lesson.id}
+                          lesson={lesson}
+                          progress={progressByLesson.get(lesson.id) ?? null}
+                          onOpen={() => handleOpenLesson(lesson)}
+                          onEdit={() => handleStartEdit(lesson)}
+                          onDelete={() => handleDelete(lesson)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>

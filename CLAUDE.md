@@ -555,8 +555,40 @@ leçon).
   devient plus utile qu'un simple ordre chronologique. Groupes triés par
   nom de domaine (ordre alphabétique), leçons conservées dans leur ordre
   d'origine (`created_at` croissant) à l'intérieur de chaque groupe ; les
-  filtres existants (recherche, domaine, "à réviser") s'appliquent avant
-  le regroupement, donc un domaine filtré n'affiche qu'un seul groupe.
+  filtres existants (recherche, domaine, "à réviser", + difficulté/durée
+  ci-dessous) s'appliquent avant le regroupement, donc un domaine filtré
+  n'affiche qu'un seul groupe. Chaque en-tête de groupe affiche aussi une
+  icône (`domainIcon`, `lib/lessons.ts` — table fixe pour les domaines
+  suggérés, repli sur 📘 pour un domaine personnalisé) et un ratio
+  "terminées" propre au groupe (sur les leçons actuellement filtrées, pas
+  le total absolu).
+- **Filtres difficulté et durée** (`difficultyFilter`/`durationFilter`,
+  `LessonsPage.tsx`), en plus de la recherche/domaine/révision déjà en
+  place : la durée est découpée en trois tranches (≤5, 6-15, >15 min)
+  plutôt qu'une valeur exacte, plus lisible qu'un slider pour ce volume de
+  leçons (`estimated_minutes` reste surtout homogène à ~5 min pour
+  l'instant, mais la tranche >15 min anticipe des leçons plus longues à
+  venir).
+- **"Leçon du jour"** (`pickDailyLesson`, `lib/lessons.ts`) : une
+  suggestion affichée en haut de la bibliothèque, choisie parmi les
+  leçons pas encore terminées. Sélection **déterministe par date** (un
+  simple hash de la date ISO du jour modulo le nombre de candidats), pas
+  un vrai tirage aléatoire : la suggestion reste stable toute la journée
+  même après un rechargement de page, et change naturellement le
+  lendemain. Elle peut aussi changer en cours de journée si la leçon
+  suggérée vient justement d'être terminée (elle sort alors du pool de
+  candidats) — comportement volontaire : plutôt que de disparaître, le
+  widget repropose autre chose à lire. Aucune leçon pas déjà terminée ->
+  widget masqué (pas de repli sur une leçon déjà lue).
+- **Série de lecture ("streak")** (`computeLessonStreak`, `lib/lessons.ts`,
+  affichée dans la carte "📚 Progression") : jours consécutifs avec au
+  moins une activité sur une leçon (ouverture, validation ou révision),
+  déduits des `updated_at` de `lesson_progress`. Même principe que
+  `computeStreak` (`lib/history.ts`) pour les habitudes : le jour en cours
+  ne casse pas la série tant qu'il n'est pas terminé. Volontairement basé
+  sur `updated_at` plutôt qu'un suivi dédié par jour — plus simple, et
+  suffisant puisque toute interaction avec une leçon (y compris rouvrir
+  une leçon déjà terminée pour la relire) retouche cette colonne.
 - **Bug vécu** : la première fois que j'ai présenté `017_...sql` à
   l'utilisateur dans le chat, j'ai paresseusement résumé son contenu
   ("fichier complet poussé sur la branche, ~370 lignes") au lieu de coller
