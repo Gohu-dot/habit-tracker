@@ -352,288 +352,294 @@ export default function LessonsPage({ userId }: LessonsPageProps) {
   const selectedLesson = selectedLessonId ? lessons.find((l) => l.id === selectedLessonId) ?? null : null;
 
   if (loading) {
-    return <p className="p-8 text-ink-soft">Chargement...</p>;
+    return (
+      <div className="lecons-backdrop min-h-screen">
+        <p className="p-8 text-ink-soft">Chargement...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-8">
-      <AppHeader userId={userId} />
+    <div className="lecons-backdrop min-h-screen">
+      <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-8">
+        <AppHeader userId={userId} />
 
-      {errorMessage && (
-        <p className="rounded-lg border border-danger-border bg-danger-surface px-3 py-2 text-sm text-danger-text">
-          {errorMessage}
-        </p>
-      )}
+        {errorMessage && (
+          <p className="rounded-lg border border-danger-border bg-danger-surface px-3 py-2 text-sm text-danger-text">
+            {errorMessage}
+          </p>
+        )}
 
-      {selectedLesson ? (
-        <LessonReader
-          lesson={selectedLesson}
-          progress={progressByLesson.get(selectedLesson.id) ?? null}
-          note={notesByLesson.get(selectedLesson.id) ?? null}
-          onBack={() => setSelectedLessonId(null)}
-          onSectionVisited={(index) => handleSectionVisited(selectedLesson.id, index)}
-          onComplete={() => handleComplete(selectedLesson.id)}
-          onReview={(success) => handleReview(selectedLesson.id, success)}
-          onSaveNote={(noteContent) => handleSaveNote(selectedLesson.id, noteContent)}
-        />
-      ) : (
-        <>
-          <div className="space-y-1.5 rounded-xl border border-sand bg-ivory p-4 shadow-sm">
-            <p className="font-medium text-ink">📚 Progression</p>
-            <p className="text-sm text-ink-soft">
-              {counts.terminees}/{counts.total} terminées · {counts.enCours} en cours
-              {counts.aReviser > 0 && ` · ${counts.aReviser} à réviser aujourd'hui`}
-              {lessonStreak > 0 && ` · 🔥 ${lessonStreak} jour${lessonStreak > 1 ? "s" : ""} d'affilée`}
-            </p>
-          </div>
-
-          {dailyLesson && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand bg-blush/15 p-4 shadow-sm">
-              <div>
-                <p className="font-medium text-ink">🎲 Leçon du jour</p>
-                <p className="text-sm text-ink-soft">
-                  {domainIcon(dailyLesson.domain)} {dailyLesson.title}
-                </p>
-              </div>
-              <button
-                onClick={() => handleOpenLesson(dailyLesson)}
-                className="rounded-md bg-blush-deep px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
-              >
-                Découvrir
-              </button>
+        {selectedLesson ? (
+          <LessonReader
+            lesson={selectedLesson}
+            progress={progressByLesson.get(selectedLesson.id) ?? null}
+            note={notesByLesson.get(selectedLesson.id) ?? null}
+            onBack={() => setSelectedLessonId(null)}
+            onSectionVisited={(index) => handleSectionVisited(selectedLesson.id, index)}
+            onComplete={() => handleComplete(selectedLesson.id)}
+            onReview={(success) => handleReview(selectedLesson.id, success)}
+            onSaveNote={(noteContent) => handleSaveNote(selectedLesson.id, noteContent)}
+          />
+        ) : (
+          <>
+            <div className="space-y-1.5 rounded-xl border border-sand bg-ivory p-4 shadow-sm">
+              <p className="font-medium text-ink">📚 Progression</p>
+              <p className="text-sm text-ink-soft">
+                {counts.terminees}/{counts.total} terminées · {counts.enCours} en cours
+                {counts.aReviser > 0 && ` · ${counts.aReviser} à réviser aujourd'hui`}
+                {lessonStreak > 0 && ` · 🔥 ${lessonStreak} jour${lessonStreak > 1 ? "s" : ""} d'affilée`}
+              </p>
             </div>
-          )}
 
-          <details
-            open={formOpen}
-            onToggle={(e) => setFormOpen(e.currentTarget.open)}
-            className="rounded-xl border border-sand bg-ivory p-4 shadow-sm"
-          >
-            <summary className="cursor-pointer select-none text-sm font-medium text-ink">
-              {editingId ? "Modifier la leçon" : "+ Ajouter une leçon"}
-            </summary>
-            <form onSubmit={handleSubmit} className="mt-3 space-y-3">
-              {editingId && (
+            {dailyLesson && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand bg-blush/15 p-4 shadow-sm">
+                <div>
+                  <p className="font-medium text-ink">🎲 Leçon du jour</p>
+                  <p className="text-sm text-ink-soft">
+                    {domainIcon(dailyLesson.domain)} {dailyLesson.title}
+                  </p>
+                </div>
                 <button
-                  type="button"
-                  onClick={resetForm}
-                  className="text-xs text-ink-soft underline hover:text-ink"
+                  onClick={() => handleOpenLesson(dailyLesson)}
+                  className="rounded-md bg-blush-deep px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
                 >
-                  Annuler la modification
+                  Découvrir
                 </button>
-              )}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-title">
-                    Titre
-                  </label>
-                  <input
-                    id="lesson-title"
-                    type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-domain">
-                    Domaine
-                  </label>
-                  <input
-                    id="lesson-domain"
-                    type="text"
-                    list="lesson-domain-suggestions"
-                    required
-                    value={domain}
-                    onChange={(e) => setDomain(e.target.value)}
-                    placeholder="Ex. Cosmologie et astronomie"
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
-                  />
-                  <datalist id="lesson-domain-suggestions">
-                    {DOMAIN_SUGGESTIONS.map((d) => (
-                      <option key={d} value={d} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-difficulty">
-                    Difficulté
-                  </label>
-                  <select
-                    id="lesson-difficulty"
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as LessonDifficultyKey)}
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
-                  >
-                    {LESSON_DIFFICULTIES.map((d) => (
-                      <option key={d.key} value={d.key}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-minutes">
-                    Durée estimée (minutes, optionnel)
-                  </label>
-                  <input
-                    id="lesson-minutes"
-                    type="number"
-                    min={1}
-                    value={estimatedMinutes}
-                    onChange={(e) => setEstimatedMinutes(e.target.value)}
-                    placeholder="15"
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-status">
-                    Statut éditorial
-                  </label>
-                  <select
-                    id="lesson-status"
-                    value={editorialStatus}
-                    onChange={(e) => setEditorialStatus(e.target.value as LessonEditorialStatusKey)}
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
-                  >
-                    {LESSON_EDITORIAL_STATUSES.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-summary">
-                    Résumé (optionnel)
-                  </label>
-                  <input
-                    id="lesson-summary"
-                    type="text"
-                    value={summary}
-                    onChange={(e) => setSummary(e.target.value)}
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
-                  />
-                </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs text-ink-soft" htmlFor="lesson-content">
-                    Contenu (## section, ### sous-section, &quot;&gt; &quot; encadré, &quot;- &quot; liste)
-                  </label>
-                  <textarea
-                    id="lesson-content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    rows={12}
-                    placeholder={"## Introduction\nTexte de section...\n\n> Définition importante\n\n## Développement\n- premier point\n- second point"}
-                    className="w-full rounded-md border border-sand bg-cream px-3 py-2 font-mono text-sm text-ink"
-                  />
-                </div>
               </div>
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-md bg-blush-deep px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Ajouter"}
-              </button>
-            </form>
-          </details>
+            )}
 
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une leçon..."
-              className="min-w-0 flex-1 rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink placeholder:text-ink-soft sm:flex-none sm:w-48"
-            />
-            <select
-              value={domainFilter}
-              onChange={(e) => setDomainFilter(e.target.value)}
-              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+            <details
+              open={formOpen}
+              onToggle={(e) => setFormOpen(e.currentTarget.open)}
+              className="rounded-xl border border-sand bg-ivory p-4 shadow-sm"
             >
-              <option value={DOMAIN_FILTER_ALL}>Tous les domaines</option>
-              {domains.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-            <select
-              value={reviewFilter}
-              onChange={(e) => setReviewFilter(e.target.value)}
-              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
-            >
-              <option value={REVIEW_FILTER_ALL}>Toutes</option>
-              <option value={REVIEW_FILTER_DUE}>À réviser aujourd&rsquo;hui</option>
-            </select>
-            <select
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
-            >
-              <option value={DIFFICULTY_FILTER_ALL}>Toutes difficultés</option>
-              {LESSON_DIFFICULTIES.map((d) => (
-                <option key={d.key} value={d.key}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={durationFilter}
-              onChange={(e) => setDurationFilter(e.target.value)}
-              className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
-            >
-              <option value={DURATION_FILTER_ALL}>Toutes durées</option>
-              <option value={DURATION_FILTER_SHORT}>≤ 5 min</option>
-              <option value={DURATION_FILTER_MEDIUM}>6 à 15 min</option>
-              <option value={DURATION_FILTER_LONG}>&gt; 15 min</option>
-            </select>
-            <span className="text-ink-soft">
-              {filteredLessons.length} leçon{filteredLessons.length > 1 ? "s" : ""}
-            </span>
-          </div>
-
-          {filteredLessons.length === 0 ? (
-            <p className="rounded-xl border border-sand bg-ivory p-4 text-sm text-ink-soft shadow-sm">
-              {lessons.length === 0
-                ? "Aucune leçon pour l'instant — ajoute-en une avec le formulaire ci-dessus."
-                : "Aucune leçon ne correspond à ces filtres."}
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {lessonsByDomain.map(([domainName, domainLessons]) => {
-                const doneInGroup = domainLessons.filter(
-                  (l) => progressByLesson.get(l.id)?.status === "terminee"
-                ).length;
-                return (
-                  <div key={domainName} className="space-y-3">
-                    <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
-                      {domainIcon(domainName)} {domainName}{" "}
-                      <span className="font-normal normal-case">
-                        ({doneInGroup}/{domainLessons.length} terminées)
-                      </span>
-                    </h2>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {domainLessons.map((lesson) => (
-                        <LessonCard
-                          key={lesson.id}
-                          lesson={lesson}
-                          progress={progressByLesson.get(lesson.id) ?? null}
-                          onOpen={() => handleOpenLesson(lesson)}
-                          onEdit={() => handleStartEdit(lesson)}
-                          onDelete={() => handleDelete(lesson)}
-                        />
-                      ))}
-                    </div>
+              <summary className="cursor-pointer select-none text-sm font-medium text-ink">
+                {editingId ? "Modifier la leçon" : "+ Ajouter une leçon"}
+              </summary>
+              <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="text-xs text-ink-soft underline hover:text-ink"
+                  >
+                    Annuler la modification
+                  </button>
+                )}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-title">
+                      Titre
+                    </label>
+                    <input
+                      id="lesson-title"
+                      type="text"
+                      required
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+                    />
                   </div>
-                );
-              })}
+                  <div className="space-y-1">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-domain">
+                      Domaine
+                    </label>
+                    <input
+                      id="lesson-domain"
+                      type="text"
+                      list="lesson-domain-suggestions"
+                      required
+                      value={domain}
+                      onChange={(e) => setDomain(e.target.value)}
+                      placeholder="Ex. Cosmologie et astronomie"
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+                    />
+                    <datalist id="lesson-domain-suggestions">
+                      {DOMAIN_SUGGESTIONS.map((d) => (
+                        <option key={d} value={d} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-difficulty">
+                      Difficulté
+                    </label>
+                    <select
+                      id="lesson-difficulty"
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value as LessonDifficultyKey)}
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+                    >
+                      {LESSON_DIFFICULTIES.map((d) => (
+                        <option key={d.key} value={d.key}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-minutes">
+                      Durée estimée (minutes, optionnel)
+                    </label>
+                    <input
+                      id="lesson-minutes"
+                      type="number"
+                      min={1}
+                      value={estimatedMinutes}
+                      onChange={(e) => setEstimatedMinutes(e.target.value)}
+                      placeholder="15"
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-status">
+                      Statut éditorial
+                    </label>
+                    <select
+                      id="lesson-status"
+                      value={editorialStatus}
+                      onChange={(e) => setEditorialStatus(e.target.value as LessonEditorialStatusKey)}
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+                    >
+                      {LESSON_EDITORIAL_STATUSES.map((s) => (
+                        <option key={s.key} value={s.key}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-summary">
+                      Résumé (optionnel)
+                    </label>
+                    <input
+                      id="lesson-summary"
+                      type="text"
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 text-sm text-ink"
+                    />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-xs text-ink-soft" htmlFor="lesson-content">
+                      Contenu (## section, ### sous-section, &quot;&gt; &quot; encadré, &quot;- &quot; liste)
+                    </label>
+                    <textarea
+                      id="lesson-content"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      rows={12}
+                      placeholder={"## Introduction\nTexte de section...\n\n> Définition importante\n\n## Développement\n- premier point\n- second point"}
+                      className="w-full rounded-md border border-sand bg-cream px-3 py-2 font-mono text-sm text-ink"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-md bg-blush-deep px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Ajouter"}
+                </button>
+              </form>
+            </details>
+
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher une leçon..."
+                className="min-w-0 flex-1 rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink placeholder:text-ink-soft sm:flex-none sm:w-48"
+              />
+              <select
+                value={domainFilter}
+                onChange={(e) => setDomainFilter(e.target.value)}
+                className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+              >
+                <option value={DOMAIN_FILTER_ALL}>Tous les domaines</option>
+                {domains.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={reviewFilter}
+                onChange={(e) => setReviewFilter(e.target.value)}
+                className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+              >
+                <option value={REVIEW_FILTER_ALL}>Toutes</option>
+                <option value={REVIEW_FILTER_DUE}>À réviser aujourd&rsquo;hui</option>
+              </select>
+              <select
+                value={difficultyFilter}
+                onChange={(e) => setDifficultyFilter(e.target.value)}
+                className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+              >
+                <option value={DIFFICULTY_FILTER_ALL}>Toutes difficultés</option>
+                {LESSON_DIFFICULTIES.map((d) => (
+                  <option key={d.key} value={d.key}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={durationFilter}
+                onChange={(e) => setDurationFilter(e.target.value)}
+                className="rounded-md border border-sand bg-ivory px-2 py-1.5 text-ink-soft"
+              >
+                <option value={DURATION_FILTER_ALL}>Toutes durées</option>
+                <option value={DURATION_FILTER_SHORT}>≤ 5 min</option>
+                <option value={DURATION_FILTER_MEDIUM}>6 à 15 min</option>
+                <option value={DURATION_FILTER_LONG}>&gt; 15 min</option>
+              </select>
+              <span className="text-ink-soft">
+                {filteredLessons.length} leçon{filteredLessons.length > 1 ? "s" : ""}
+              </span>
             </div>
-          )}
-        </>
-      )}
+
+            {filteredLessons.length === 0 ? (
+              <p className="rounded-xl border border-sand bg-ivory p-4 text-sm text-ink-soft shadow-sm">
+                {lessons.length === 0
+                  ? "Aucune leçon pour l'instant — ajoute-en une avec le formulaire ci-dessus."
+                  : "Aucune leçon ne correspond à ces filtres."}
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {lessonsByDomain.map(([domainName, domainLessons]) => {
+                  const doneInGroup = domainLessons.filter(
+                    (l) => progressByLesson.get(l.id)?.status === "terminee"
+                  ).length;
+                  return (
+                    <div key={domainName} className="space-y-3">
+                      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+                        {domainIcon(domainName)} {domainName}{" "}
+                        <span className="font-normal normal-case">
+                          ({doneInGroup}/{domainLessons.length} terminées)
+                        </span>
+                      </h2>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {domainLessons.map((lesson) => (
+                          <LessonCard
+                            key={lesson.id}
+                            lesson={lesson}
+                            progress={progressByLesson.get(lesson.id) ?? null}
+                            onOpen={() => handleOpenLesson(lesson)}
+                            onEdit={() => handleStartEdit(lesson)}
+                            onDelete={() => handleDelete(lesson)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

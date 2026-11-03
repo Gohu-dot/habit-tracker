@@ -169,6 +169,23 @@
   background-attachment: fixed, fixed;
 }
 
+/* Ambiance de l'onglet Culture G (ex-Leçons) : observatoire pixel art de
+   nuit (fourni par l'utilisateur — voir public/lecons/backgrounds/), même
+   technique que .films-backdrop ci-dessus. Voile un peu plus opaque (70%
+   contre 60% pour Films) : l'image de fond est ici beaucoup plus sombre
+   et contrastée (ciel nocturne), un voile trop léger aurait nui à la
+   lisibilité du texte ink/ink-soft par-dessus. */
+.lecons-backdrop {
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-cream) 70%, transparent), color-mix(in srgb, var(--color-cream) 70%, transparent)),
+    url("/lecons/backgrounds/observatoire.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+  background-position: center, center;
+  background-attachment: fixed, fixed;
+}
+
 /* Cadre ornemental des panneaux RPG : dégradé de fond habillé d'un vrai
    cadre illustré (bronze gravé/délabré, généré par l'utilisateur — voir
    public/rpg/frames/) posé en border-image plutôt qu'en clip-path CSS.

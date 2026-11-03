@@ -7,7 +7,7 @@ const BASE_TABS = [
   { href: "/", label: "Habitudes" },
   { href: "/recettes", label: "Recettes" },
   { href: "/films", label: "Films" },
-  { href: "/lecons", label: "Leçons" },
+  { href: "/lecons", label: "Culture G" },
 ];
 
 const RPG_TAB = { href: "/rpg", label: "RPG" };

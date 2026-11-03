@@ -8,7 +8,7 @@ d'habitudes de vie valant chacune des points, avec une jauge quotidienne
 partage : les comptes sont créés manuellement dans Supabase.
 
 Deux comptes coexistent désormais sur le même site, chacun avec son propre
-onglet dédié en plus des onglets communs (Habitudes/Recettes/Films/Leçons) : le compte
+onglet dédié en plus des onglets communs (Habitudes/Recettes/Films/Culture G) : le compte
 d'origine, et un second compte (voir "Onglet RPG" plus bas) dont l'onglet
 n'est visible que sur ce compte-là. RLS s'occupe déjà d'isoler les données
 de chaque compte ; seul l'affichage des onglets diffère selon qui est
@@ -439,7 +439,25 @@ connecté (voir `NavTabs.tsx`).
   lisibilité du texte `ink`/`ink-soft` par-dessus — s'adapte tout seul au
   thème actif, vérifié visuellement dans les deux modes avant de livrer.
 
-## Onglet Leçons
+## Onglet Culture G (ex-Leçons)
+Renommé depuis "Leçons" une fois le virage vers la culture générale courte
+confirmé à l'usage (voir plus bas) — seul le libellé affiché dans
+`NavTabs.tsx` a changé, la route (`/lecons`), les noms de fichiers
+(`LessonsPage.tsx`, `lib/lessons.ts`, `LessonReader.tsx`, `LessonCard.tsx`)
+et les tables (`lessons`, `lesson_progress`, `lesson_notes`) restent
+inchangés pour ne pas casser de lien ni ajouter une migration de
+renommage inutile pour un simple changement d'étiquette.
+
+**`public/lecons/backgrounds/observatoire.jpg`** + classe
+`.lecons-backdrop` (`globals.css`) : illustration de fond (observatoire
+pixel art de nuit, fourni par l'utilisateur), exactement la même
+technique que `.films-backdrop` — voile `color-mix(in srgb,
+var(--color-cream) N%, transparent)` plutôt qu'une teinte fixe, donc
+adapté automatiquement au thème clair/sombre. Voile à 70% plutôt que 60%
+(comme Films) : cette image est beaucoup plus sombre et contrastée (ciel
+nocturne étoilé), un voile aussi léger que pour Films aurait nui à la
+lisibilité du texte par-dessus.
+
 Bibliothèque de culture générale (lecture longue + révision espacée),
 partie d'un cahier des charges bien plus large fourni par l'utilisateur
 (rédigé via ChatGPT) — ce premier palier n'implémente que le socle
