@@ -275,8 +275,10 @@ le tableau de bord habitudes/recettes de l'autre utilisateur.
   être comprises sans connaissances préalables dans le domaine
   (astronomie, littérature, arts, histoire, géographie, mythologie,
   physique/chimie, biologie/évolution, cinéma, philosophie, "profils de
-  pays" avec capitale/gastronomie/paysages...). Une soixantaine de leçons
-  de départ sont fournies par migrations SQL, avec un statut éditorial "à
+  pays" avec capitale/gastronomie/paysages, technologies, psychologie,
+  mathématiques, économie, histoire des sciences, corps humain, sport...).
+  Une quatre-vingtaine de leçons de départ sont fournies par migrations
+  SQL, avec un statut éditorial "à
   vérifier" (relecture conseillée avant de les considérer comme fiables à
   100%) ; d'autres leçons peuvent être ajoutées ou modifiées à tout moment
   depuis le formulaire "+ Ajouter une leçon". La bibliothèque regroupe les

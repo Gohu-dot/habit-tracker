@@ -47,6 +47,7 @@ const DOMAIN_ICONS: Record<string, string> = {
   "Mathématiques et logique": "🔢",
   "Technologies et société": "💻",
   "Mythologies et civilisations": "🏺",
+  Sport: "🏅",
 };
 
 export function domainIcon(domain: string): string {
@@ -71,6 +72,7 @@ export const DOMAIN_SUGGESTIONS = [
   "Mathématiques et logique",
   "Technologies et société",
   "Mythologies et civilisations",
+  "Sport",
 ];
 
 // Échelle de répétition espacée volontairement simple (voir le prompt

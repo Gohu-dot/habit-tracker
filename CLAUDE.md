@@ -533,14 +533,21 @@ leçon).
   de données (`domain` en texte libre, `content` en markdown maison) et le
   lecteur le supportaient déjà — un format court ne produit juste aucun
   `## ` donc pas de sommaire, ce qui est attendu.
-- Trois migrations successives alimentent la banque : `017_...sql` (20
+- Quatre migrations successives alimentent la banque : `017_...sql` (20
   leçons : astronomie, littérature, arts, histoire, géographie),
   `018_..._2.sql` (16 leçons : mythologie, physique/chimie,
   biologie/évolution, cinéma), `019_..._3.sql` (28 leçons : 5 de
-  philosophie, 5 nouveaux "profils de pays" — capitale, gastronomie,
-  paysages, nouveau domaine `Pays et cultures du monde` ajouté à
-  `DOMAIN_SUGGESTIONS` — et 2 leçons de plus sur chacun des 9 thèmes déjà
-  amorcés par 017/018), toutes rédigées par Claude à partir de ses
+  philosophie, 5 "profils de pays" — nouveau domaine `Pays et cultures du
+  monde` — et 2 leçons de plus sur les 9 thèmes déjà amorcés),
+  `020_..._4.sql` (28 leçons : comble 6 domaines déjà listés dans
+  `DOMAIN_SUGGESTIONS` mais restés vides depuis le début — Technologies et
+  société, Psychologie et sciences cognitives, Mathématiques et logique,
+  Sociologie et économie, Histoire des sciences et des techniques, Corps
+  humain et neurosciences — et ajoute un nouveau domaine `Sport`, absent
+  jusqu'ici alors qu'il ressort comme un thème classique des quiz/applis
+  de culture générale d'après une recherche web faite avant ce lot
+  — Wooclap, Quizia, doquizzes, treasure quiz — plutôt qu'une génération
+  purement improvisée). Toutes rédigées par Claude à partir de ses
   connaissances générales. **`editorial_status = 'a_verifier'`** et non
   `'publiee'` pour tout ce contenu : il n'a pas été vérifié par une source
   externe au moment de l'écrire (pas d'accès réseau sortant depuis cet
