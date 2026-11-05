@@ -624,6 +624,22 @@ leçon).
   dans la réponse, jamais un résumé ou un renvoi "voir le fichier", même
   quand le fichier est long et déjà poussé sur la branche.
 
+## Onglet Sport (en préparation)
+Futur 5e onglet, pas encore implémenté. Format validé avec l'utilisateur :
+une banque de séances par discipline (calisthénie, course à pied, natation)
+sur le modèle de Culture G, **plus** un suivi de progression par discipline
+(comme `lesson_progress`) — contrairement à Culture G, pas de simple lecture
+mais une vraie notion d'avancement mesurable (reps, distance, temps).
+Multi-niveaux (débutant à avancé), objectifs santé générale + progression
+mesurable, accès salle de sport autorisé en plus du poids du corps.
+
+Recherche de méthodes d'entraînement fiables effectuée et consignée dans
+`docs/sport-recherche.md` (sources : Convict Conditioning pour la
+calisthénie, Jack Daniels/VDOT et Hal Higdon pour la course, École de
+Natation Française pour la natation, lignes directrices OMS 2020 en
+transversal) — aucune implémentation (schéma de données, migration, UI)
+n'a encore été faite à partir de cette recherche.
+
 ## Onglet RPG
 Espace séparé pour un second compte (voir en tête de fichier), pensé comme
 un mini-RPG plutôt qu'un tableau de bord "clean girl" : des capacités fixes
